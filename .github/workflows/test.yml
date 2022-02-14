@@ -1,0 +1,36 @@
+name: Run Lambda tests
+on:
+  push:
+permissions:
+  id-token: write
+  contents: write
+  actions: write
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: intg
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - uses: fregante/setup-git-user@v1
+      - uses: coursier/cache-action@v6
+      - name: Configure AWS credentials from management account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
+          aws-region: eu-west-2
+          role-session-name: APIDownloadDependencies
+      - name: Test
+        run: sbt assembly
+      - name: Get next tag
+        uses: technote-space/get-next-version-action@v1
+        if: github.ref == 'refs/heads/main'
+      - name: Build new image version
+        if: github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+        run: |
+          aws s3 cp target/scala-2.13/keycloak-user-management.jar s3://tdr-backend-code-mgmt/${{ env.NEXT_VERSION }}/keycloak-user-management.jar
+          gh release create ${{ env.NEXT_VERSION }} target/scala-2.13/keycloak-user-management.jar 
+          git tag ${{ env.NEXT_VERSION }}
+          git push origin ${{ env.NEXT_VERSION }}
