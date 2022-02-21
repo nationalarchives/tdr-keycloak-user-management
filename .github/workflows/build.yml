@@ -12,7 +12,6 @@ jobs:
     environment: intg
     steps:
       - uses: actions/checkout@v2
-      - uses: fregante/setup-git-user@v1
       - uses: actions-ecosystem/action-get-latest-tag@v1
         id: get-latest-tag
       - uses: actions-ecosystem/action-bump-semver@v1
