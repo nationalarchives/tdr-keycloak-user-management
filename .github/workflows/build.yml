@@ -45,6 +45,6 @@ jobs:
           aws s3 cp target/scala-2.13/keycloak-user-management.jar s3://tdr-backend-checks-intg/${{ steps.bump-semver.outputs.new_version }}/keycloak-user-management.jar
           gh release create ${{ steps.bump-semver.outputs.new_version }} target/scala-2.13/keycloak-user-management.jar
       - name: Deploy to integration
-        run: gh workflow run deploy.yml  -f environment=intg -f toDeploy=${{ steps.bump-semver.outputs.new_version }} -r keycloak-user-management
+        run: gh workflow run deploy.yml  -f environment=intg -f toDeploy=${{ steps.bump-semver.outputs.new_version }} -r main
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
