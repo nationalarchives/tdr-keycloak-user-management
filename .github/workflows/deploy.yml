@@ -6,62 +6,46 @@ on:
         description: 'Environment'
         required: true
         default: 'intg'
-      to_deploy:
+      toDeploy:
         description: 'Version to deploy'
         required: true
 
 permissions:
   id-token: write
-  contents: read
+  contents: write
   actions: write
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - id: string
-        uses: ASzc/change-string-case-action@v2
-        with:
-          string: ${{ github.event.inputs.environment }}
-      - name: Set environment specific account name
-        env:
-          ENVIRONMENT: ${{ github.event.inputs.environment }}
-        run: |
-          echo account_secret_name=${ENVIRONMENT^^}_ACCOUNT >> $GITHUB_ENV
-          echo environment_title=${ENVIRONMENT^} >> $GITHUB_ENV
       - name: Configure AWS credentials from management account
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::${{ secrets[env.account_secret_name] }}:role/TDRGithubActionsDeployLambda
+          role-to-assume: arn:aws:iam::${{ secrets.ACCOUNT_NUMBER }}:role/TDRGithubActionsDeployLambda${{ secrets.TITLE_STAGE }}
           aws-region: eu-west-2
           role-session-name: DeployLambda
       - name: Deploy lambda
         run: |
-          aws lambda update-function-code --function-name tdr-create-keycloak-user-s3-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-checks-${{ github.event.inputs.environment }} --s3-key keycloak-user-management.jar
+          aws lambda update-function-code --function-name tdr-create-keycloak-user-s3-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-checks-${{ github.event.inputs.environment }} --s3-key ${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
+          aws lambda update-function-code --function-name tdr-create-keycloak-user-api-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-checks-${{ github.event.inputs.environment }} --s3-key ${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
       - name: Send service updated message
         uses: slackapi/slack-github-action@v1.18.0
         with:
           payload: |
             {
-              "message": "*Keycloak User Management* :arrow_up: The lambda has been updated in in the *${{ github.event.inputs.environment }}* environment"
+              "service" : "Keycloak user management",
+              "version" : "${{ github.event.inputs.toDeploy }}",
+              "environment": "${{ github.event.inputs.environment }}"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_SUCCESS_WORKFLOW }}
       - name: Update release branch
         run: |
-          git branch -f release-${{ github.events.inputs.environment }} HEAD
-          git push -f origin release-${{ github.events.inputs.environment }}
-      - name: Run E2E tests
-        if: github.event.inputs.environment != 'prod'
-        uses: octokit/request-action@v2.x
-        with:
-          route: POST /repos/nationalarchives/tdr-e2e-tests/actions/workflows/ci.yml/dispatches
-          ref: main
-          inputs: "{\"environment\": \"${{ github.events.inputs.environment }}\"}"
-        env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          git branch -f release-${{ github.event.inputs.environment }} HEAD
+          git push -f origin release-${{ github.event.inputs.environment }}
       - name: Send failure message
         id: slack
         uses: slackapi/slack-github-action@v1.18.0
@@ -69,7 +53,9 @@ jobs:
         with:
           payload: |
             {
-              "message": "*Keycloak user management* :warning: Deployment of *${{ github.events.inputs.to_deploy }}* to the *${{ github.events.inputs.environment }}* environment has failed"
+              "service" : "Keycloak user management",
+              "version" : "${{ github.event.inputs.toDeploy }}",
+              "environment": "${{ github.event.inputs.environment }}"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_FAILURE_WORKFLOW }}
