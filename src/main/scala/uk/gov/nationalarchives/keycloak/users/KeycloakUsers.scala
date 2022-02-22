@@ -24,7 +24,7 @@ object KeycloakUsers {
 
   def deleteUser(auth: Auth, userId: String): String = {
     val client = keyCloakAdminClient(auth)
-    val realm = client.realm("tdr")
+    val realm = client.realm(auth.realm)
     val user = realm.users()
     user.delete(userId)
     client.close()
@@ -34,10 +34,8 @@ object KeycloakUsers {
   def createUsers(auth: Auth, userCredentials: List[UserCredentials]): String = {
     val client = keyCloakAdminClient(auth)
     def createUser(userCredentials: UserCredentials) = {
-      val realm = client.realm("tdr")
+      val realm = client.realm(auth.realm)
       val user = realm.users()
-
-
       val userRepresentation: UserRepresentation = new UserRepresentation
 
       val creds = userCredentials.password.map(password => {
@@ -61,7 +59,6 @@ object KeycloakUsers {
 
       userRepresentation.setGroups((bodyUserGroups ::: userTypeGroups).asJava)
 
-
       val response: Response = user.create(userRepresentation)
       logger.info(s"Response status ${response.getStatus}")
       if(response.getStatus == 201) {
@@ -76,7 +73,6 @@ object KeycloakUsers {
         logger.info(reason)
         reason
       }
-
     }
     val ids = userCredentials.map(createUser).mkString("\n")
     client.close()

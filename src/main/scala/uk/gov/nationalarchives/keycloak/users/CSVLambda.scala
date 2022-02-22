@@ -24,11 +24,11 @@ class CSVLambda extends RequestHandler[S3EventNotification, String] {
     for {
       auth <- authFromConfig()
       records <- IO(input.getRecords.asScala)
-      recordUsers <- IO(parseUsers(records))
+      recordUsers <- IO(parseUserInputs(records))
     } yield createUsers(auth, recordUsers)
   }.unsafeRunSync()
 
-  private def parseUsers(records: mutable.Buffer[S3EventNotification.S3EventNotificationRecord]): List[UserCredentials] = {
+  private def parseUserInputs(records: mutable.Buffer[S3EventNotification.S3EventNotificationRecord]): List[UserCredentials] = {
     records.flatMap(record => {
       val key = record.getS3.getObject.getKey
       val bucket = record.getS3.getBucket.getName

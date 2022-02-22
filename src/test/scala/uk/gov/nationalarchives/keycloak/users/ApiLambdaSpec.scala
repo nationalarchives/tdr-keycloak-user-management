@@ -51,7 +51,7 @@ class ApiLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     event.setBody(body)
     event
   }
-  "handleRequest" should "return the user ID from Keycloak" in {
+  "handleRequest" should "return the created user ID from Keycloak" in {
     val apiGatewayEvent = event(passwordSet)
     val userId = UUID.randomUUID().toString
     lambdaSpecUtils.setupAuthServer(userId)

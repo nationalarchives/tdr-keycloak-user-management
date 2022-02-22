@@ -15,7 +15,7 @@ object LambdaRunner extends App {
 
   def sendCsvLambdaRequest() = {
     // You will need to run this with credentials which have access to this bucket in the sandbox account
-    val s3Entity = new S3Entity(null, new S3BucketEntity("tdr-create-bulk-keycloak-users-intg", null, null), new S3ObjectEntity("sample_csv_file.csv", null, null, null, null), null)
+    val s3Entity = new S3Entity(null, new S3BucketEntity("tdr-create-bulk-keycloak-users-sbox", null, null), new S3ObjectEntity("sample_csv_file.csv", null, null, null, null), null)
     val record = new S3EventNotificationRecord(null, null, null, null, null, null, null,s3Entity, null)
     val s3Event = new S3EventNotification(List(record).asJava)
       new CSVLambda().handleRequest(s3Event, null)

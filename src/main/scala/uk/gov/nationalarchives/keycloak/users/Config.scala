@@ -13,12 +13,13 @@ object Config {
     val kmsUtils = KMSUtils(kms(config.kms.endpoint), Map("LambdaFunctionName" -> config.function.name))
     Auth(kmsUtils.decryptValue(config.auth.url),
       secret = kmsUtils.decryptValue(config.auth.secret),
-      client = config.auth.client
+      client = config.auth.client,
+      realm = config.auth.realm
     )
   })
 
   case class LambdaFunction(name: String)
   case class Kms(endpoint: String)
-  case class Auth(url: String, secret: String, client: String)
+  case class Auth(url: String, secret: String, client: String, realm: String)
   case class Configuration(auth: Auth, function: LambdaFunction, kms: Kms)
 }
