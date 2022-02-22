@@ -3,7 +3,6 @@ on:
   push:
     branches:
       - main
-      - keycloak-user-management
 permissions:
   id-token: write
   contents: write
