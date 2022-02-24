@@ -47,7 +47,7 @@ object KeycloakUsers {
         credentials
       }).toList.asJava
 
-      userRepresentation.setUsername(userCredentials.userName)
+      userRepresentation.setUsername(userCredentials.email)
       userRepresentation.setFirstName(userCredentials.firstName)
       userRepresentation.setLastName(userCredentials.lastName)
       userRepresentation.setEmail(userCredentials.email)
@@ -79,8 +79,7 @@ object KeycloakUsers {
     ids
   }
 
-  case class UserCredentials(userName: String,
-                             email: String,
+  case class UserCredentials(email: String,
                              password: Option[String] = None,
                              firstName: String,
                              lastName: String,

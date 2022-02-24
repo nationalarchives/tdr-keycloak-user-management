@@ -72,8 +72,7 @@ class LambdaSpecUtils(wiremockAuthServer: WireMockServer) {
 object LambdaSpecUtils {
   def apply(wireMockServer: WireMockServer) = new LambdaSpecUtils(wireMockServer)
   case class Credentials(`type`: String, value: String)
-  case class TestUserRequest(username: String,
-                             firstName: String,
+  case class TestUserRequest(firstName: String,
                              lastName: String,
                              email: String,
                              requiredActions: List[String] = Nil,

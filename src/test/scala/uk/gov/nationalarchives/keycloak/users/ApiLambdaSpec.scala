@@ -31,7 +31,7 @@ class ApiLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     wiremockAuthServer.stop()
   }
 
-  def userCredentials: (Option[String], Option[Boolean]) => String = UserCredentials("username", "test@test.com", _,
+  def userCredentials: (Option[String], Option[Boolean]) => String = UserCredentials("test@test.com", _,
     "First Name", "Last Name", "Body".some, "UserType".some, _).asJson.printWith(Printer.noSpaces)
 
   def allCredentials: String = userCredentials("Password12".some, true.some)
@@ -125,7 +125,6 @@ class ApiLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
 
     val body = lambdaSpecUtils.userCreateCalls.head.getRequest.getBodyAsString
     val request: TestUserRequest = lambdaSpecUtils.testRequest(body)
-    request.username should equal("username")
     request.firstName should equal("First Name")
     request.lastName should equal("Last Name")
     request.groups.sorted.min should equal("/transferring_body_user/Body")
