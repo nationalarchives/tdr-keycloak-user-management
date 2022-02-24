@@ -1,2 +1,2 @@
-userName,email,password,firstName,lastName,body,userType,sendEmail
-testUser,test@test.com,,First Name,Last Name,Mock 1 Department,,false
+email,password,firstName,lastName,body,userType,sendEmail
+test@test.com,,First Name,Last Name,Mock 1 Department,,false

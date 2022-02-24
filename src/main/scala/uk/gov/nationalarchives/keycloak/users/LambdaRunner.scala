@@ -28,7 +28,6 @@ object LambdaRunner extends App {
         |{
         |  "users" : [
         |    {
-        |      "userName": "test",
         |      "email": "test@test.com",
         |      "password": "Password12",
         |      "firstName": "first",
