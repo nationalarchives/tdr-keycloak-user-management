@@ -11,8 +11,7 @@ This lambda, defined in `ApiLambda` is attached to API Gateway. This API is used
 ## Common Code
 The common code is defined in `KeycloakUsers` The structure of the csv file and the structure of the API JSON is defined in the `UserCredentials` class.
 ```scala
-case class UserCredentials(userName: String,
-                             email: String,
+case class UserCredentials(email: String,
                              password: Option[String] = None,
                              firstName: String,
                              lastName: String,
