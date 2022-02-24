@@ -156,11 +156,12 @@ class CSVLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     for {
       x <- 1 until 4
     } yield {
-      val userOpt = requests.find(_.email == s"test$x@test.com")
+      val email = s"test$x@test.com"
+      val userOpt = requests.find(_.email == email)
       userOpt.isDefined should equal(true)
       val user = userOpt.get
+      user.username should equal(email)
       user.firstName should equal(s"First$x Name$x")
-      user.lastName should equal(s"Last$x Name$x")
       user.lastName should equal(s"Last$x Name$x")
       user.groups.min should equal(s"/transferring_body_user/Mock $x Department")
       user.groups.max should equal(s"/user_type/standard${x}_user")
