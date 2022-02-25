@@ -1,0 +1,27 @@
+name: Run Lambda tests
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+      - release-*
+permissions:
+  id-token: write
+  contents: write
+  actions: write
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: intg
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - uses: coursier/cache-action@v6
+      - name: Configure AWS credentials from management account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
+          aws-region: eu-west-2
+          role-session-name: APIDownloadDependencies
+      - name: Test
+        run: sbt test

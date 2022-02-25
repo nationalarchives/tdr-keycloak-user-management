@@ -1,0 +1,3 @@
+email,password,firstName,lastName,body,userType,sendEmail
+test@test.com,,First Name,Last Name,Mock 1 Department,,true
+test2@test.com,,First2 Name2,Last2 Name2,Mock 2 Department,,false

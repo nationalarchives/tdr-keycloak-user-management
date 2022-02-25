@@ -1,0 +1,43 @@
+name: Tag and pre deploy
+on:
+  push:
+    branches:
+      - main
+permissions:
+  id-token: write
+  contents: write
+jobs:
+  pre-deploy:
+    runs-on: ubuntu-latest
+    environment: intg
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-ecosystem/action-get-latest-tag@v1.5.0
+        id: get-latest-tag
+      - uses: actions-ecosystem/action-bump-semver@v1
+        id: bump-semver
+        with:
+          current_version: ${{ steps.get-latest-tag.outputs.tag }}
+          level: patch
+      - uses: actions-ecosystem/action-push-tag@v1
+        with:
+          tag: ${{ steps.bump-semver.outputs.new_version }}
+          message: '${{ steps.bump-semver.outputs.new_version }}'
+      - name: Configure AWS credentials from management account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
+          aws-region: eu-west-2
+          role-session-name: APIDownloadDependencies
+      - name: Build jar file
+        run: sbt assembly
+      - name: Build new image version
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+        run: |
+          aws s3 cp target/scala-2.13/keycloak-user-management.jar s3://tdr-backend-code-mgmt/${{ steps.bump-semver.outputs.new_version }}/keycloak-user-management.jar
+          gh release create ${{ steps.bump-semver.outputs.new_version }} target/scala-2.13/keycloak-user-management.jar
+      - name: Deploy to integration
+        run: gh workflow run deploy.yml  -f environment=intg -f toDeploy=${{ steps.bump-semver.outputs.new_version }} -r main
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
