@@ -5,6 +5,8 @@ This is the code used to create Keycloak users using the Keycloak Java library. 
 ## CSV Lambda
 This lambda, defined in the `CSVLambda` class is used to bulk create users from a CSV file. The CSV file is uploaded to an S3 bucket which triggers the lambda.
 
+The s3 bucket to upload the CSV file to is: `tdr-create-bulk-keycloak-users-{tdr environment}`
+
 ## API Lambda
 This lambda, defined in `ApiLambda` is attached to API Gateway. This API is used by the end to end tests to create and delete Keycloak users to avoid having to open up the Keycloak admin interface to the GitHub actions servers in the US.
 
