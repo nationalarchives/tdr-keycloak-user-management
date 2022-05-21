@@ -4,7 +4,7 @@ object Dependencies {
   private val keycloakVersion = "18.0.0"
 
   lazy val awsUtils =  "uk.gov.nationalarchives.aws.utils" %% "tdr-aws-utils" % "0.1.20"
-  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.3.11"
+  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.3.12"
   lazy val lambdaCore = "com.amazonaws" % "aws-lambda-java-core" % "1.2.1"
   lazy val csvParser =  "io.github.zamblauskas" %% "scala-csv-parser" % "0.13.1"
   lazy val circeExtras =  "io.circe" %% "circe-generic-extras" % "0.14.1"
