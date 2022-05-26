@@ -7,7 +7,7 @@ object Dependencies {
   lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.3.12"
   lazy val lambdaCore = "com.amazonaws" % "aws-lambda-java-core" % "1.2.1"
   lazy val csvParser =  "io.github.zamblauskas" %% "scala-csv-parser" % "0.13.1"
-  lazy val circeExtras =  "io.circe" %% "circe-generic-extras" % "0.14.1"
+  lazy val circeExtras =  "io.circe" %% "circe-generic-extras" % "0.14.2"
   lazy val keycloakCore  = "org.keycloak" % "keycloak-core" % keycloakVersion
   lazy val keycloakAdminClient = "org.keycloak" % "keycloak-admin-client" % keycloakVersion
   lazy val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.1"
