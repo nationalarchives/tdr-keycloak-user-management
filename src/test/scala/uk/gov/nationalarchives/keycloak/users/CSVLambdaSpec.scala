@@ -20,13 +20,16 @@ import scala.jdk.CollectionConverters._
 class CSVLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
   val s3Api: S3Mock = S3Mock(port = 8003, dir = "/tmp/s3")
   val wiremockAuthServer = new WireMockServer(9002)
-  val lambdaSpecUtils = new LambdaSpecUtils(wiremockAuthServer)
+  val wiremockSsmServer = new WireMockServer(9003)
+  val lambdaSpecUtils = new LambdaSpecUtils(wiremockAuthServer, wiremockSsmServer)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
     s3Api.start
+    lambdaSpecUtils.setupSsmServer()
     lambdaSpecUtils.wiremockKmsEndpoint.start()
     wiremockAuthServer.start()
+    wiremockSsmServer.start()
     s3Client.createBucket(CreateBucketRequest.builder.bucket("test").build())
   }
 
@@ -34,6 +37,7 @@ class CSVLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     super.afterAll()
     lambdaSpecUtils.wiremockKmsEndpoint.stop()
     wiremockAuthServer.stop()
+    wiremockSsmServer.stop()
   }
 
   def s3Client: S3Client = S3Client.builder

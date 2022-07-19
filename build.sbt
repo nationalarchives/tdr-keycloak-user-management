@@ -8,10 +8,8 @@ ThisBuild / organizationName := "nationalarchives"
 lazy val root = (project in file("."))
   .settings(
     name := "tdr-keycloak-user-management",
-    resolvers ++= Seq[Resolver](
-      "TDR Releases" at "s3://tdr-releases-mgmt"
-    ),
     libraryDependencies ++= Seq(
+      awsSsm,
       awsUtils,
       catsEffect,
       keycloakCore,

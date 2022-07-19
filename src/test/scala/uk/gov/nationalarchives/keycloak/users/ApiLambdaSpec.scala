@@ -18,17 +18,21 @@ import java.util.UUID
 
 class ApiLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
   val wiremockAuthServer = new WireMockServer(9002)
-  val lambdaSpecUtils = new LambdaSpecUtils(wiremockAuthServer)
-  
+  val wiremockSsmServer = new WireMockServer(9003)
+  val lambdaSpecUtils = new LambdaSpecUtils(wiremockAuthServer, wiremockSsmServer)
+
   override def beforeAll(): Unit = {
     super.beforeAll()
+    lambdaSpecUtils.setupSsmServer()
     lambdaSpecUtils.wiremockKmsEndpoint.start()
     wiremockAuthServer.start()
+    wiremockSsmServer.start()
   }
   override def afterAll(): Unit = {
     super.afterAll()
     lambdaSpecUtils.wiremockKmsEndpoint.stop()
     wiremockAuthServer.stop()
+    wiremockSsmServer.stop()
   }
 
   def userCredentials: (Option[String], Option[Boolean]) => String = UserCredentials("test@test.com", _,

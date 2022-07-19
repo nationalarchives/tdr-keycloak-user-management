@@ -17,10 +17,17 @@ import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import scala.jdk.CollectionConverters._
 
-class LambdaSpecUtils(wiremockAuthServer: WireMockServer) {
+class LambdaSpecUtils(wiremockAuthServer: WireMockServer, wiremockSsmServer: WireMockServer) {
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
   val baseAdminUrl = "/auth/admin/realms/tdr/users"
+
+  def setupSsmServer(): Unit = {
+    wiremockSsmServer
+      .stubFor(post(urlEqualTo("/"))
+        .willReturn(okJson("{\"Parameter\":{\"Name\":\"string\",\"Value\":\"string\"}}"))
+      )
+  }
 
   val wiremockKmsEndpoint = new WireMockServer(new WireMockConfiguration().port(9004).extensions(new ResponseDefinitionTransformer {
     override def transform(request: Request, responseDefinition: ResponseDefinition, files: FileSource, parameters: Parameters): ResponseDefinition = {
@@ -36,6 +43,7 @@ class LambdaSpecUtils(wiremockAuthServer: WireMockServer) {
             .build()
       }
     }
+
     override def getName: String = ""
   }))
   wiremockKmsEndpoint.stubFor(post(urlEqualTo("/")))
@@ -70,8 +78,10 @@ class LambdaSpecUtils(wiremockAuthServer: WireMockServer) {
 }
 
 object LambdaSpecUtils {
-  def apply(wireMockServer: WireMockServer) = new LambdaSpecUtils(wireMockServer)
+  def apply(wireMockAuthServer: WireMockServer, wiremockSsmServer: WireMockServer) = new LambdaSpecUtils(wireMockAuthServer, wiremockSsmServer)
+
   case class Credentials(`type`: String, value: String)
+
   case class TestUserRequest(username: String,
                              firstName: String,
                              lastName: String,
