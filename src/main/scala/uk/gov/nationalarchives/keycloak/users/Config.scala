@@ -4,6 +4,7 @@ import cats.effect.IO
 import pureconfig.ConfigSource
 import pureconfig.generic.auto._
 import pureconfig.module.catseffect.syntax._
+import software.amazon.awssdk.http.apache.ApacheHttpClient
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssm.SsmClient
 import software.amazon.awssdk.services.ssm.model.GetParameterRequest
@@ -15,8 +16,10 @@ import java.net.URI
 object Config {
 
   def getClientSecret(secretPath: String, endpoint: String): String = {
+    val httpClient = ApacheHttpClient.builder.build
     val ssmClient: SsmClient = SsmClient.builder()
       .endpointOverride(URI.create(endpoint))
+      .httpClient(httpClient)
       .region(Region.EU_WEST_2)
       .build()
     val getParameterRequest = GetParameterRequest.builder.name(secretPath).withDecryption(true).build
