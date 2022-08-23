@@ -5,7 +5,7 @@ import cats.effect.unsafe.implicits.global
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification
 import com.amazonaws.services.lambda.runtime.{Context, RequestHandler}
 import org.slf4j.Logger
-import org.slf4j.impl.SimpleLoggerFactory
+import org.slf4j.simple.SimpleLoggerFactory
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import uk.gov.nationalarchives.aws.utils.Clients.s3
 import uk.gov.nationalarchives.keycloak.users.Config._

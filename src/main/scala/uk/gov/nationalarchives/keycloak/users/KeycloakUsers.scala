@@ -4,7 +4,7 @@ import org.keycloak.OAuth2Constants
 import org.keycloak.admin.client.{Keycloak, KeycloakBuilder}
 import org.keycloak.representations.idm.{CredentialRepresentation, UserRepresentation}
 import org.slf4j.Logger
-import org.slf4j.impl.SimpleLoggerFactory
+import org.slf4j.simple.SimpleLoggerFactory
 import uk.gov.nationalarchives.keycloak.users.Config.Auth
 
 import javax.ws.rs.core.Response
