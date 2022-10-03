@@ -16,6 +16,6 @@ object Dependencies {
   lazy val kmsUtils = "software.amazon.awssdk" % "kms" % "2.17.209"
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.13"
   lazy val s3Mock = "io.findify" %% "s3mock" % "0.2.6"
-  lazy val slf4j = "org.slf4j" % "slf4j-simple" % "2.0.2"
+  lazy val slf4j = "org.slf4j" % "slf4j-simple" % "2.0.3"
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "2.27.2"
 }
