@@ -13,7 +13,7 @@ object Dependencies {
   lazy val keycloakAdminClient = "org.keycloak" % "keycloak-admin-client" % keycloakVersion
   lazy val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.1"
   lazy val pureConfigCatsEffect = "com.github.pureconfig" %% "pureconfig-cats-effect" % "0.17.1"
-  lazy val kmsUtils = "software.amazon.awssdk" % "kms" % "2.17.209"
+  lazy val kmsUtils = "software.amazon.awssdk" % "kms" % "2.18.1"
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.14"
   lazy val s3Mock = "io.findify" %% "s3mock" % "0.2.6"
   lazy val slf4j = "org.slf4j" % "slf4j-simple" % "2.0.3"
