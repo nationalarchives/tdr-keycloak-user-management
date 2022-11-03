@@ -18,7 +18,6 @@ lazy val root = (project in file("."))
       kmsUtils,
       pureConfig,
       pureConfigCatsEffect,
-      s3Mock % Test,
       scalaTest % Test,
       slf4j,
       wiremock % Test,

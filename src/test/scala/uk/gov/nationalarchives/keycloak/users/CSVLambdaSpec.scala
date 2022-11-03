@@ -3,34 +3,32 @@ package uk.gov.nationalarchives.keycloak.users
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification._
 import com.github.tomakehurst.wiremock.WireMockServer
-import io.findify.s3mock.S3Mock
+import com.github.tomakehurst.wiremock.client.WireMock.{get, ok, urlEqualTo}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model._
 import uk.gov.nationalarchives.keycloak.users.LambdaSpecUtils._
 
 import java.net.URI
-import java.nio.file.Path
 import java.util.UUID
+import scala.io.Source
 import scala.jdk.CollectionConverters._
 
 class CSVLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
-  val s3Api: S3Mock = S3Mock(port = 8003, dir = "/tmp/s3")
+  val wiremockS3 = new WireMockServer(8003)
   val wiremockAuthServer = new WireMockServer(9002)
   val wiremockSsmServer = new WireMockServer(9003)
   val lambdaSpecUtils = new LambdaSpecUtils(wiremockAuthServer, wiremockSsmServer)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    s3Api.start
     lambdaSpecUtils.setupSsmServer()
+    wiremockS3.start()
     lambdaSpecUtils.wiremockKmsEndpoint.start()
     wiremockAuthServer.start()
     wiremockSsmServer.start()
-    s3Client.createBucket(CreateBucketRequest.builder.bucket("test").build())
   }
 
   override def afterAll(): Unit = {
@@ -45,9 +43,12 @@ class CSVLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     .endpointOverride(URI.create("http://localhost:8003/"))
     .build()
 
-  def uploadCsv(csvName: String): PutObjectResponse = {
-    val csvPath: Path = Path.of(getClass.getResource(s"/csv/$csvName").getPath)
-    s3Client.putObject(PutObjectRequest.builder.bucket("test").key(csvName).build(), csvPath)
+  def uploadCsv(csvName: String): Unit = {
+    val lines = Source.fromResource(s"csv/$csvName").getLines().mkString("\n")
+    wiremockS3
+      .stubFor(get(urlEqualTo(s"/$csvName"))
+        .willReturn(ok(lines))
+      )
   }
 
   def getS3Event(csvName: String): S3EventNotification = {
@@ -64,6 +65,7 @@ class CSVLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     val s3Event = getS3Event(csvName)
     val userId = UUID.randomUUID().toString
     lambdaSpecUtils.setupAuthServer(userId)
+
 
     val response = new CSVLambda().handleRequest(s3Event, null)
     response should equal(userId)
