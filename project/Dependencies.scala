@@ -1,7 +1,7 @@
 import sbt._
 
 object Dependencies {
-  private val keycloakVersion = "20.0.0"
+  private val keycloakVersion = "20.0.1"
 
   lazy val awsUtils =  "uk.gov.nationalarchives" %% "tdr-aws-utils" % "0.1.50"
   lazy val awsSsm = "software.amazon.awssdk" % "ssm" % "2.18.11"
