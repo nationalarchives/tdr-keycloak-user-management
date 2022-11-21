@@ -5,7 +5,7 @@ object Dependencies {
 
   lazy val awsUtils =  "uk.gov.nationalarchives" %% "tdr-aws-utils" % "0.1.53"
   lazy val awsSsm = "software.amazon.awssdk" % "ssm" % "2.18.11"
-  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.4.0"
+  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.4.1"
   lazy val lambdaCore = "com.amazonaws" % "aws-lambda-java-core" % "1.2.1"
   lazy val csvParser =  "io.github.zamblauskas" %% "scala-csv-parser" % "0.13.1"
   lazy val circeExtras =  "io.circe" %% "circe-generic-extras" % "0.14.3"
