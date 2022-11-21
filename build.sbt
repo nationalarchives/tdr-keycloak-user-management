@@ -10,7 +10,9 @@ lazy val root = (project in file("."))
     name := "tdr-keycloak-user-management",
     libraryDependencies ++= Seq(
       awsSsm,
-      awsUtils,
+      kmsUtils,
+      decoderUtils,
+      s3Utils,
       catsEffect,
       keycloakCore,
       csvParser,

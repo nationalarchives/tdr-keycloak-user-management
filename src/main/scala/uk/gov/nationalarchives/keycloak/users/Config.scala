@@ -7,8 +7,8 @@ import pureconfig.module.catseffect.syntax._
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ssm.SsmClient
 import software.amazon.awssdk.services.ssm.model.GetParameterRequest
-import uk.gov.nationalarchives.aws.utils.Clients.kms
-import uk.gov.nationalarchives.aws.utils.KMSUtils
+import uk.gov.nationalarchives.aws.utils.kms.KMSClients.kms
+import uk.gov.nationalarchives.aws.utils.kms.KMSUtils
 
 import java.net.URI
 
