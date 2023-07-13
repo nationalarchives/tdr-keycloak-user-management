@@ -7,7 +7,7 @@ import org.slf4j.Logger
 import org.slf4j.simple.SimpleLoggerFactory
 import uk.gov.nationalarchives.keycloak.users.Config.Auth
 
-import javax.ws.rs.core.Response
+import jakarta.ws.rs.core.Response
 import scala.jdk.CollectionConverters._
 
 object KeycloakUsers {
