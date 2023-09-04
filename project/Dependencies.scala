@@ -18,5 +18,5 @@ object Dependencies {
   lazy val pureConfigCatsEffect = "com.github.pureconfig" %% "pureconfig-cats-effect" % "0.17.4"
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.16"
   lazy val slf4j = "org.slf4j" % "slf4j-simple" % "2.0.7"
-  lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.0"
+  lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
 }
