@@ -14,8 +14,8 @@ object Dependencies {
   lazy val circeExtras =  "io.circe" %% "circe-generic-extras" % "0.14.3"
   lazy val keycloakCore  = "org.keycloak" % "keycloak-core" % keycloakVersion
   lazy val keycloakAdminClient = "org.keycloak" % "keycloak-admin-client" % keycloakVersion
-  lazy val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.5"
-  lazy val pureConfigCatsEffect = "com.github.pureconfig" %% "pureconfig-cats-effect" % "0.17.5"
+  lazy val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.6"
+  lazy val pureConfigCatsEffect = "com.github.pureconfig" %% "pureconfig-cats-effect" % "0.17.6"
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.18"
   lazy val slf4j = "org.slf4j" % "slf4j-simple" % "2.0.12"
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
