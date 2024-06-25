@@ -2,7 +2,7 @@ import sbt._
 
 object Dependencies {
   private val keycloakVersion = "25.0.1"
-  private val awsUtilsVersion = "0.1.186"
+  private val awsUtilsVersion = "0.1.188"
   lazy val kmsUtils =  "uk.gov.nationalarchives" %% "kms-utils" % awsUtilsVersion
   lazy val s3Utils =  "uk.gov.nationalarchives" %% "s3-utils" % awsUtilsVersion
   lazy val decoderUtils =  "uk.gov.nationalarchives" %% "decoders-utils" % awsUtilsVersion
@@ -15,7 +15,7 @@ object Dependencies {
   lazy val keycloakAdminClient = "org.keycloak" % "keycloak-admin-client" % keycloakVersion
   lazy val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.7"
   lazy val pureConfigCatsEffect = "com.github.pureconfig" %% "pureconfig-cats-effect" % "0.17.7"
-  lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.18"
+  lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19"
   lazy val slf4j = "org.slf4j" % "slf4j-simple" % "2.0.13"
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
 }
