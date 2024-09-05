@@ -55,7 +55,15 @@ object KeycloakUsers {
       userRepresentation.setCredentials(creds)
 
       val bodyUserGroups = userCredentials.body.map(value => s"/transferring_body_user/$value").toList
-      val userTypeGroups = userCredentials.userType.map(value => s"/user_type/${value}_user").toList
+      val tnaUserTypes = List("metadata_viewer", "transfer_advisor")
+      val userTypeGroups =
+        userCredentials.userType.map(userType => {
+          if (tnaUserTypes.exists(userType.contains)) {
+            s"/user_type/tna_user/$userType"
+          } else {
+            s"/user_type/${userType}_user"
+          }
+        }).toList
 
       userRepresentation.setGroups((bodyUserGroups ::: userTypeGroups).asJava)
 

@@ -35,15 +35,24 @@ class ApiLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     wiremockSsmServer.stop()
   }
 
-  def userCredentials: (Option[String], Option[Boolean]) => String = UserCredentials("test@test.com", _,
-    "First Name", "Last Name", "Body".some, "UserType".some, _).asJson.printWith(Printer.noSpaces)
+  def userCredentials(password: Option[String], userType: Option[String] = "UserType".some , sendEmail: Option[Boolean]): String =
+      UserCredentials(
+        email = "test@test.com",
+        password = password,
+        firstName = "First Name",
+        lastName = "Last Name",
+        body = Some("Body"),
+        userType = userType,
+        sendEmail = sendEmail
+      ).asJson.printWith(Printer.noSpaces)
 
-  def allCredentials: String = userCredentials("Password12".some, true.some)
-  def passwordSet: String = userCredentials("Password12".some, false.some)
-  def passwordUnset: String = userCredentials(None, false.some)
-  def sendEmailMissing: String = userCredentials(None, None)
-  def sendEmailTrue: String = userCredentials(None, true.some)
-  def sendEmailFalse: String = userCredentials(None, false.some)
+  def allCredentials: String = userCredentials(password = "Password12".some, sendEmail = true.some)
+  def tnaAllCredentials: String = userCredentials("Password12".some, userType= "transfer_advisor".some, sendEmail = true.some)
+  def passwordSet: String = userCredentials("Password12".some, sendEmail = false.some)
+  def passwordUnset: String = userCredentials(None, sendEmail = false.some)
+  def sendEmailMissing: String = userCredentials(None, sendEmail = None)
+  def sendEmailTrue: String = userCredentials(None, sendEmail = true.some)
+  def sendEmailFalse: String = userCredentials(None, sendEmail = false.some)
 
   def event(body: String): APIGatewayV2HTTPEvent = {
     val event = new APIGatewayV2HTTPEvent()
@@ -133,5 +142,19 @@ class ApiLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     request.lastName should equal("Last Name")
     request.groups.sorted.min should equal("/transferring_body_user/Body")
     request.groups.sorted.max should equal("/user_type/UserType_user")
+  }
+
+  "handleRequest" should "send the correct fields for a tna user type" in {
+    val apiGatewayEvent = event(tnaAllCredentials)
+    val userId = UUID.randomUUID().toString
+    lambdaSpecUtils.setupAuthServer(userId)
+
+    new ApiLambda().handleRequest(apiGatewayEvent, null)
+
+    val body = lambdaSpecUtils.userCreateCalls.head.getRequest.getBodyAsString
+    val request: TestUserRequest = lambdaSpecUtils.testRequest(body)
+    request.firstName should equal("First Name")
+    request.lastName should equal("Last Name")
+    request.groups.sorted.max should equal("/user_type/tna_user/transfer_advisor")
   }
 }
