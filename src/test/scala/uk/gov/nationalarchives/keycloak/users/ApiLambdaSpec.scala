@@ -47,7 +47,7 @@ class ApiLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
       ).asJson.printWith(Printer.noSpaces)
 
   def allCredentials: String = userCredentials(password = "Password12".some, sendEmail = true.some)
-  def tnaAllCredentials: String = userCredentials("Password12".some, userType= "transfer_advisor".some, sendEmail = true.some)
+  def tnaAllCredentials: String = userCredentials("Password12".some, userType= "transfer_adviser".some, sendEmail = true.some)
   def passwordSet: String = userCredentials("Password12".some, sendEmail = false.some)
   def passwordUnset: String = userCredentials(None, sendEmail = false.some)
   def sendEmailMissing: String = userCredentials(None, sendEmail = None)
@@ -155,6 +155,6 @@ class ApiLambdaSpec extends AnyFlatSpec with Matchers with BeforeAndAfterAll {
     val request: TestUserRequest = lambdaSpecUtils.testRequest(body)
     request.firstName should equal("First Name")
     request.lastName should equal("Last Name")
-    request.groups.sorted.max should equal("/user_type/tna_user/transfer_advisor")
+    request.groups.sorted.max should equal("/user_type/tna_user/transfer_adviser")
   }
 }
