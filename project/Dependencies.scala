@@ -1,7 +1,7 @@
 import sbt._
 
 object Dependencies {
-  private val keycloakVersion = "26.0.3"
+  private val keycloakVersion = "26.0.7"
   private val awsUtilsVersion = "0.1.225"
   lazy val kmsUtils =  "uk.gov.nationalarchives" %% "kms-utils" % awsUtilsVersion
   lazy val s3Utils =  "uk.gov.nationalarchives" %% "s3-utils" % awsUtilsVersion
@@ -12,7 +12,7 @@ object Dependencies {
   lazy val csvParser =  "io.github.zamblauskas" %% "scala-csv-parser" % "0.13.1"
   lazy val circeExtras =  "io.circe" %% "circe-generic-extras" % "0.14.4"
   lazy val keycloakCore  = "org.keycloak" % "keycloak-core" % keycloakVersion
-  lazy val keycloakAdminClient = "org.keycloak" % "keycloak-admin-client" % keycloakVersion
+  lazy val keycloakAdminClient = "org.keycloak" % "keycloak-admin-client" % "26.0.3"
   lazy val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.8"
   lazy val pureConfigCatsEffect = "com.github.pureconfig" %% "pureconfig-cats-effect" % "0.17.8"
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19"
