@@ -1,18 +1,18 @@
 import sbt._
 
 object Dependencies {
-  private val keycloakVersion = "26.0.3"
-  private val awsUtilsVersion = "0.1.222"
+  private val keycloakVersion = "26.0.7"
+  private val awsUtilsVersion = "0.1.227"
   lazy val kmsUtils =  "uk.gov.nationalarchives" %% "kms-utils" % awsUtilsVersion
   lazy val s3Utils =  "uk.gov.nationalarchives" %% "s3-utils" % awsUtilsVersion
   lazy val decoderUtils =  "uk.gov.nationalarchives" %% "decoders-utils" % awsUtilsVersion
   lazy val awsSsm = "software.amazon.awssdk" % "ssm" % "2.26.27"
-  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.5.6"
+  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.5.7"
   lazy val lambdaCore = "com.amazonaws" % "aws-lambda-java-core" % "1.2.1"
   lazy val csvParser =  "io.github.zamblauskas" %% "scala-csv-parser" % "0.13.1"
   lazy val circeExtras =  "io.circe" %% "circe-generic-extras" % "0.14.4"
   lazy val keycloakCore  = "org.keycloak" % "keycloak-core" % keycloakVersion
-  lazy val keycloakAdminClient = "org.keycloak" % "keycloak-admin-client" % keycloakVersion
+  lazy val keycloakAdminClient = "org.keycloak" % "keycloak-admin-client" % "26.0.3"
   lazy val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.8"
   lazy val pureConfigCatsEffect = "com.github.pureconfig" %% "pureconfig-cats-effect" % "0.17.8"
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19"
