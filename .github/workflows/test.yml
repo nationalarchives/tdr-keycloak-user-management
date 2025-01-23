@@ -24,4 +24,5 @@ jobs:
           aws-region: eu-west-2
           role-session-name: APIDownloadDependencies
       - name: Test
+        uses: sbt/setup-sbt@v1
         run: sbt test
