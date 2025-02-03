@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: intg
     steps:
+      - uses: sbt/setup-sbt@v1
       - uses: actions/checkout@v3
       - uses: actions-ecosystem/action-get-latest-tag@v1.6.0
         id: get-latest-tag
@@ -35,7 +36,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
         run: |
-          aws s3 cp target/scala-2.13/keycloak-user-management.jar s3://tdr-backend-code-mgmt/${{ steps.bump-semver.outputs.new_version }}/keycloak-user-management.jar
+          aws s3 cp target/scala-2.13/keycloak-user-management.jar s3://tdr-backend-code-mgmt/keycloak-user-management/${{ steps.bump-semver.outputs.new_version }}/keycloak-user-management.jar
           gh release create ${{ steps.bump-semver.outputs.new_version }} target/scala-2.13/keycloak-user-management.jar
       - name: Deploy to integration
         run: gh workflow run deploy.yml  -f environment=intg -f toDeploy=${{ steps.bump-semver.outputs.new_version }} -r main
