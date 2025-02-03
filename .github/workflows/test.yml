@@ -17,6 +17,7 @@ jobs:
       - uses: sbt/setup-sbt@v1
       - name: Checkout
         uses: actions/checkout@v3
+      - uses: sbt/setup-sbt@v1
       - uses: coursier/cache-action@v6
       - name: Configure AWS credentials from management account
         uses: aws-actions/configure-aws-credentials@v1-node16
