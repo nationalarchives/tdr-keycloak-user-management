@@ -52,30 +52,36 @@ object KeycloakInactiveUsers extends App {
       .toEpochMilli
 
     users.flatMap { user =>
-      val loginEvents = realmResource
-        .getEvents(
-          java.util.Arrays.asList("LOGIN"),
-          null, //client
-          user.getId,
-          null, // dateFrom
-          null, // dateTo
-          null, // ipAddress
-          0,    // firstResult
-          1     // maxResults - we only need the most recent
-        ).asScala.toList
+      val userResource = usersResource.get(user.getId)
+      val userRep = userResource.toRepresentation()
 
-      val lastLogin = loginEvents.headOption.map(_.getTime)
+      if (!userRep.isEnabled) {
+        Nil
+      } else {
+        val loginEvents = realmResource
+          .getEvents(
+            java.util.Arrays.asList("LOGIN"),
+            null, //client
+            user.getId,
+            null, // dateFrom
+            null, // dateTo
+            null, // ipAddress
+            0, // firstResult
+            1 // maxResults - we only need the most recent
+          ).asScala.toList
 
-      if (lastLogin.isEmpty || lastLogin.exists(_ < cutoffTime)) {
-        Some(InactiveUser(
-          id = user.getId,
-          username = user.getUsername,
-          email = Option(user.getEmail),
-          firstName = Option(user.getFirstName),
-          lastName = Option(user.getLastName),
-          lastLoginDate = lastLogin.map(formatDate)
-        ))
-      } else None
+        val lastLogin = loginEvents.headOption.map(_.getTime)
+        if (lastLogin.isEmpty || lastLogin.exists(_ < cutoffTime)) {
+          Some(InactiveUser(
+            id = user.getId,
+            username = user.getUsername,
+            email = Option(user.getEmail),
+            firstName = Option(user.getFirstName),
+            lastName = Option(user.getLastName),
+            lastLoginDate = lastLogin.map(formatDate)
+          ))
+        } else None
+      }
     }
   }
 
