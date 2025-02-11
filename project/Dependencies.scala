@@ -18,4 +18,6 @@ object Dependencies {
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19"
   lazy val slf4j = "org.slf4j" % "slf4j-simple" % "2.0.13"
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
+  lazy val circe = "io.circe" %% "circe-generic" % "0.14.10"
+  lazy val circeParser = "io.circe" %% "circe-parser" % "0.14.10"
 }

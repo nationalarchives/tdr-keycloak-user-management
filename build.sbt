@@ -20,10 +20,12 @@ lazy val root = (project in file("."))
       kmsUtils,
       pureConfig,
       pureConfigCatsEffect,
+      circe,
+      circeParser,
       scalaTest % Test,
       slf4j,
       wiremock % Test,
-      circeExtras % Test
+      circeExtras % Test,
     ),
     Test / fork := true,
     Test / javaOptions += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf",
