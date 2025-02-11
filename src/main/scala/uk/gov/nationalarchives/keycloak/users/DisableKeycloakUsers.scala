@@ -1,16 +1,15 @@
 package uk.gov.nationalarchives.keycloak.users
 
 import cats.effect.unsafe.implicits.global
-import org.keycloak.admin.client.{Keycloak, KeycloakBuilder}
-import org.keycloak.representations.idm.UserRepresentation
-
-import scala.jdk.CollectionConverters._
-import java.time.{Instant, LocalDateTime, ZoneId}
+import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
-import io.circe._
 import org.keycloak.OAuth2Constants
+import org.keycloak.admin.client.{Keycloak, KeycloakBuilder}
 import uk.gov.nationalarchives.keycloak.users.Config.{Auth, authFromConfig}
+
+import java.time.{Instant, LocalDateTime, ZoneId}
+import scala.jdk.CollectionConverters._
 
 case class InactiveUser(
                          id: String,
@@ -47,23 +46,34 @@ object KeycloakInactiveUsers extends App {
     val users = usersResource.list().asScala.toList
 
     val cutoffTime = LocalDateTime.now()
-      .minusDays(inactivityPeriodDays)
+      .minusDays(inactivityPeriodDays) //use minusHours to test
       .atZone(ZoneId.systemDefault())
       .toInstant
       .toEpochMilli
 
     users.flatMap { user =>
-      val events = realmResource.getEvents.asScala.toList
-      val loginEvents = events.filter(e => e.getUserId == user.getId && e.getType == "LOGIN").map(_.getTime)//.sorted
-      val lastLoginTime = loginEvents.headOption
-      if (lastLoginTime.isEmpty || lastLoginTime.exists(_ < cutoffTime)) { //.nonEmpty || exists(_ < cutoffTime)
+      val loginEvents = realmResource
+        .getEvents(
+          java.util.Arrays.asList("LOGIN"),
+          null, //client
+          user.getId,
+          null, // dateFrom
+          null, // dateTo
+          null, // ipAddress
+          0,    // firstResult
+          1     // maxResults - we only need the most recent
+        ).asScala.toList
+
+      val lastLogin = loginEvents.headOption.map(_.getTime)
+
+      if (lastLogin.isEmpty || lastLogin.exists(_ < cutoffTime)) {
         Some(InactiveUser(
           id = user.getId,
           username = user.getUsername,
           email = Option(user.getEmail),
           firstName = Option(user.getFirstName),
           lastName = Option(user.getLastName),
-          lastLoginDate = lastLoginTime.map(formatDate)
+          lastLoginDate = lastLogin.map(formatDate)
         ))
       } else None
     }
@@ -72,11 +82,6 @@ object KeycloakInactiveUsers extends App {
   private def disableInactiveUsers(keycloak: Keycloak, inactiveUsers: List[InactiveUser]) : List[(String, Boolean)] = {
     val realmResource = keycloak.realm("tdr")
     val usersResources = realmResource.users()
-//    inactiveUsers.foreach{ user =>
-//      val userRepresentation: UserRepresentation = usersResources.get(user.id).toRepresentation
-//      userRepresentation.setEnabled(false)
-//      usersResources.get(user.id).update(userRepresentation)
-//    }
 
     inactiveUsers.map { user =>
       try {
@@ -131,7 +136,7 @@ object KeycloakInactiveUsers extends App {
 
   val keycloak = initializeKeycloak(authFromConfig().unsafeRunSync())
   try {
-    val inactiveUsers = findInactiveUsers(keycloak, inactivityPeriodDays = 1)
+    val inactiveUsers = findInactiveUsers(keycloak, inactivityPeriodDays = 30)
 
     println(s"Found ${inactiveUsers.length} inactive users")
 
