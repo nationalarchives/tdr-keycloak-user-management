@@ -124,6 +124,70 @@ object KeycloakInactiveUsers extends App {
     }
   }
 
+  private def removeExistingOTPConfiguration(keycloak: Keycloak, userId: String): Boolean = {
+    try {
+      val realmResource = keycloak.realm("tdr")
+      val userResource = realmResource.users().get(userId)
+
+      // Remove OTP credentials
+      val credentials = userResource.credentials().asScala
+      credentials
+        .filter(_.getType == "otp")
+        .foreach(cred => userResource.removeCredential(cred.getId))
+
+      true
+    } catch {
+      case e: Exception =>
+        println(s"Failed to remove existing OTP configuration for user $userId: ${e.getMessage}")
+        false
+    }
+  }
+
+  //Alternative enforeOTP instead of disabling user
+  private def enforceOTPForUsers(keycloak: Keycloak, inactiveUsers: List[InactiveUser]): List[(String, Boolean)] = {
+    val realmResource = keycloak.realm("tdr")
+    val usersResources = realmResource.users()
+
+    inactiveUsers.map { user =>
+      try {
+        val userResource = usersResources.get(user.id)
+        val userRep = userResource.toRepresentation()
+
+        // First remove any existing OTP configuration
+        val otpRemoved = removeExistingOTPConfiguration(keycloak, user.id)
+        if (!otpRemoved) {
+          throw new Exception("Failed to remove existing OTP configuration")
+        }
+
+        // Set required actions for new OTP setup
+        val requiredActions = new java.util.ArrayList[String]()
+        requiredActions.add("CONFIGURE_TOTP") // Require OTP setup
+        userRep.setRequiredActions(requiredActions)
+
+        // Add attributes to track when OTP was enforced
+        val attributes: Map[String, List[String]] = Map(
+          "otpEnforcedDate" -> List(LocalDateTime.now().toString),
+          "otpEnforcedReason" -> List("Automatically enforced due to inactivity - Previous OTP configuration removed")
+        )
+
+        val existingAttributes = Option(userRep.getAttributes)
+          .map(_.asScala.toMap.view.mapValues(_.asScala.toList).toMap)
+          .getOrElse(Map.empty)
+
+        val mergedAttributes = existingAttributes ++ attributes
+        userRep.setAttributes(mergedAttributes.view.mapValues(_.asJava).toMap.asJava)
+
+        userResource.update(userRep)
+
+        (user.username, true)
+      } catch {
+        case e: Exception =>
+          println(s"Failed to enforce OTP for user ${user.username}: ${e.getMessage}")
+          (user.username, false)
+      }
+    }
+  }
+
   private def exportInactiveUsers(users: List[InactiveUser], filename: String): Unit = {
     val json = users.asJson.spaces2
     scala.reflect.io.File(filename).writeAll(json)
@@ -159,8 +223,22 @@ object KeycloakInactiveUsers extends App {
     val successCount = results.count(_._2)
     println(s"\nSummary: Successfully disabled $successCount out of ${results.length} users")*/
 
-    exportInactiveUsers(inactiveUsers, "inactive_users_report.json")
-    println("Report exported to inactive_users_report.json")
+    //ENFORCE OTP
+/*    val results = enforceOTPForUsers(keycloak, inactiveUsers)
+
+    println("\nOTP Enforcement Results:")
+    println("-----------------------")
+    results.foreach {
+      case (username, true) => println(s"Successfully enforced OTP for: $username")
+      case (username, false) => println(s"Failed to enforce OTP for: $username")
+    }
+
+    val successCount = results.count(_._2)
+    println(s"\nSummary: Successfully enforced OTP for $successCount out of ${results.length} users")*/
+
+
+//    exportInactiveUsers(inactiveUsers, "inactive_users_report.json")
+//    println("Report exported to inactive_users_report.json")
 
   } catch {
     case e: Exception =>
