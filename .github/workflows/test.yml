@@ -14,13 +14,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: intg
     steps:
-      - uses: sbt/setup-sbt@v1
+      - uses: sbt/setup-sbt@26ab4b0fa1c47fa62fc1f6e51823a658fb6c760c
       - name: Checkout
-        uses: actions/checkout@v3
-      - uses: sbt/setup-sbt@v1
-      - uses: coursier/cache-action@v6
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: sbt/setup-sbt@26ab4b0fa1c47fa62fc1f6e51823a658fb6c760c
+      - uses: coursier/cache-action@142d2738bd29f0eb9d44610828acb3a19809feab
       - name: Configure AWS credentials from management account
-        uses: aws-actions/configure-aws-credentials@v1-node16
+        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722
         with:
           role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
           aws-region: eu-west-2
