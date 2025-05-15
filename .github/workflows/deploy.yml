@@ -48,6 +48,7 @@ jobs:
               "version" : "${{ github.event.inputs.toDeploy }}",
               "environment": "${{ github.event.inputs.environment }}"
             }
+          webhook-type: "incoming-webhook"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_SUCCESS_WORKFLOW }}
       - name: Update release branch
