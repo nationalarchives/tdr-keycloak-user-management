@@ -30,7 +30,7 @@ jobs:
         with:
           token: ${{ secrets.WORKFLOW_PAT }}
       - name: Configure AWS credentials from management account
-        uses: aws-actions/configure-aws-credentials@ececac1a45f3b08a01d2dd070d28d111c5fe6722
+        uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df
         with:
           role-to-assume: arn:aws:iam::${{ secrets.ACCOUNT_NUMBER }}:role/TDRGithubActionsDeployLambda${{ secrets.TITLE_STAGE }}
           aws-region: eu-west-2
@@ -40,7 +40,7 @@ jobs:
           aws lambda update-function-code --function-name tdr-create-keycloak-user-s3-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-code-mgmt --s3-key keycloak-user-management/${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
           aws lambda update-function-code --function-name tdr-create-keycloak-user-api-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-code-mgmt --s3-key keycloak-user-management/${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
       - name: Send service updated message
-        uses: slackapi/slack-github-action@v1.18.0
+        uses: slackapi/slack-github-action@v2.1.0
         with:
           payload: |
             {
@@ -48,6 +48,7 @@ jobs:
               "version" : "${{ github.event.inputs.toDeploy }}",
               "environment": "${{ github.event.inputs.environment }}"
             }
+          webhook-type: "incoming-webhook"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_SUCCESS_WORKFLOW }}
       - name: Update release branch
@@ -65,7 +66,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
       - name: Send failure message
         id: slack
-        uses: slackapi/slack-github-action@v1.18.0
+        uses: slackapi/slack-github-action@v2.1.0
         if: ${{ failure() }}
         with:
           payload: |
