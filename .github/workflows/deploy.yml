@@ -26,11 +26,11 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           token: ${{ secrets.WORKFLOW_PAT }}
       - name: Configure AWS credentials from management account
-        uses: aws-actions/configure-aws-credentials@v1-node16
+        uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df
         with:
           role-to-assume: arn:aws:iam::${{ secrets.ACCOUNT_NUMBER }}:role/TDRGithubActionsDeployLambda${{ secrets.TITLE_STAGE }}
           aws-region: eu-west-2
@@ -40,7 +40,7 @@ jobs:
           aws lambda update-function-code --function-name tdr-create-keycloak-user-s3-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-code-mgmt --s3-key keycloak-user-management/${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
           aws lambda update-function-code --function-name tdr-create-keycloak-user-api-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-code-mgmt --s3-key keycloak-user-management/${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
       - name: Send service updated message
-        uses: slackapi/slack-github-action@v1.18.0
+        uses: slackapi/slack-github-action@v2.1.0
         with:
           payload: |
             {
@@ -48,6 +48,7 @@ jobs:
               "version" : "${{ github.event.inputs.toDeploy }}",
               "environment": "${{ github.event.inputs.environment }}"
             }
+          webhook-type: "incoming-webhook"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_SUCCESS_WORKFLOW }}
       - name: Update release branch
@@ -56,7 +57,7 @@ jobs:
           git push -f origin release-${{ github.event.inputs.environment }}
       - name: Run E2E tests
         if: github.event.inputs.environment != 'prod'
-        uses: octokit/request-action@v2.x
+        uses: octokit/request-action@dad4362715b7fb2ddedf9772c8670824af564f0d
         with:
           route: POST /repos/nationalarchives/tdr-e2e-tests/actions/workflows/ci.yml/dispatches
           ref: master
@@ -65,7 +66,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
       - name: Send failure message
         id: slack
-        uses: slackapi/slack-github-action@v1.18.0
+        uses: slackapi/slack-github-action@v2.1.0
         if: ${{ failure() }}
         with:
           payload: |
