@@ -1,30 +1,47 @@
 package uk.gov.nationalarchives.keycloak.users
 
-import cats.effect.unsafe.implicits.global
+import cats.effect.{ExitCode, IO, IOApp}
+import cats.implicits.toTraverseOps
+import graphql.codegen.GetConsignments.{getConsignments => gcs}
 import io.circe._
 import io.circe.generic.semiauto._
 import io.circe.syntax._
 import org.keycloak.OAuth2Constants
 import org.keycloak.admin.client.{Keycloak, KeycloakBuilder}
-import uk.gov.nationalarchives.keycloak.users.Config.{Auth, authFromConfig}
+import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, SttpBackendOptions}
+import uk.gov.nationalarchives.keycloak.users.Config.{Api, Auth, apiFromConfig, authFromConfig}
+import uk.gov.nationalarchives.tdr.GraphQLClient
+import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment}
 
-import java.time.{Instant, LocalDateTime, ZoneId}
+import java.time.{Instant, LocalDateTime, ZoneId, ZonedDateTime}
+import java.util.UUID
+import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 
-case class InactiveUser(
-                         id: String,
-                         username: String,
-                         email: Option[String],
-                         firstName: Option[String],
-                         lastName: Option[String],
-                         lastLoginDate: Option[String]  // Added for human-readable date
-                       )
+case class User(
+                 id: String,
+                 username: String,
+                 email: Option[String],
+                 firstName: Option[String],
+                 lastName: Option[String],
+                 createdTimestamp: Option[String],
+                 group: Option[List[String]]
+               )
 
-object KeycloakInactiveUsers extends App {
+case class ConsignmentInfo(
+                            userid: String,
+                            username: String,
+                            consignmentReference: String,
+                            consignmentType: String,
+                            latestDatetime: ZonedDateTime
+                          )
 
-  implicit val inactiveUserEncoder: Encoder[InactiveUser] = deriveEncoder
+object KeycloakInactiveUsers extends IOApp {
+  implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
-  private def initializeKeycloak(auth: Auth): Keycloak =  {
+  implicit val inactiveUserEncoder: Encoder[User] = deriveEncoder
+
+  private def initializeKeycloak(auth: Auth): Keycloak = {
     KeycloakBuilder.builder()
       .serverUrl(auth.url)
       .realm("tdr")
@@ -34,64 +51,72 @@ object KeycloakInactiveUsers extends App {
       .build()
   }
 
+  private def initializeKeycloak(api: Api): Keycloak = {
+    KeycloakBuilder.builder()
+      .serverUrl(api.url)
+      .realm("tdr")
+      .clientId(api.client)
+      .clientSecret(api.secret)
+      .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
+      .build()
+  }
+
   private def formatDate(timestamp: Long): String = {
     val instant = Instant.ofEpochMilli(timestamp)
     LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toString
   }
 
-  private def findInactiveUsers(keycloak: Keycloak, inactivityPeriodDays: Int): List[InactiveUser] = {
+  private def findUsersCreatedBeforePeriod(keycloak: Keycloak, periodMonths: Int): List[User] = {
     val realmResource = keycloak.realm("tdr")
     val usersResource = realmResource.users()
 
     val users = usersResource.list().asScala.toList
 
     val cutoffTime = LocalDateTime.now()
-      .minusDays(inactivityPeriodDays) //use minusHours to test
+      .minusMonths(periodMonths) //use minusHours to test
       .atZone(ZoneId.systemDefault())
       .toInstant
       .toEpochMilli
 
     users.flatMap { user =>
+      val userGroups = usersResource.get(user.getId).groups().asScala.map(_.getName)
       val userResource = usersResource.get(user.getId)
       val userRep = userResource.toRepresentation()
 
-      if (!userRep.isEnabled) {
+      if (!userRep.isEnabled || !userGroups.contains("judgment_user")) {
         Nil
       } else {
-        val loginEvents = realmResource
-          .getEvents(
-            java.util.Arrays.asList("LOGIN"),
-            null, //client
-            user.getId,
-            null, // dateFrom
-            null, // dateTo
-            null, // ipAddress
-            0, // firstResult
-            1 // maxResults - we only need the most recent
-          ).asScala.toList
-
-        val lastLogin = loginEvents.headOption.map(_.getTime)
-        if (lastLogin.isEmpty || lastLogin.exists(_ < cutoffTime)) {
-          Some(InactiveUser(
+        val createdTimeStamp = user.getCreatedTimestamp
+        if (createdTimeStamp < cutoffTime) {
+          Some(User(
             id = user.getId,
             username = user.getUsername,
             email = Option(user.getEmail),
             firstName = Option(user.getFirstName),
             lastName = Option(user.getLastName),
-            lastLoginDate = lastLogin.map(formatDate)
+            createdTimestamp = Option(formatDate(user.getCreatedTimestamp)),
+            group = Option(userGroups.toList)
           ))
         } else None
       }
     }
   }
 
-  private def disableInactiveUsers(keycloak: Keycloak, inactiveUsers: List[InactiveUser]) : List[(String, Boolean)] = {
+  private def isOlderThanSixMonths(consignment: ConsignmentInfo): Boolean = {
+    consignment.latestDatetime.isBefore(ZonedDateTime.now().minusMonths(6))
+  }
+
+  private def disableInactiveUsers(
+                                    keycloak: Keycloak,
+                                    inactiveUsers: List[ConsignmentInfo],
+                                    shouldDisable: ConsignmentInfo => Boolean
+                                  ): IO[List[(String, Boolean)]] = {
     val realmResource = keycloak.realm("tdr")
     val usersResources = realmResource.users()
 
-    inactiveUsers.map { user =>
-      try {
-        val userResource = usersResources.get(user.id)
+    inactiveUsers.filter(shouldDisable).traverse { user =>
+      IO {
+        val userResource = usersResources.get(user.userid)
         val userRep = userResource.toRepresentation()
 
         userRep.setEnabled(false)
@@ -115,136 +140,67 @@ object KeycloakInactiveUsers extends App {
 
         userResource.update(userRep)
 
+        println(s"Successfully disabled: ${user.username}")
         (user.username, true)
-      } catch {
-        case e: Exception =>
-          println(s"Failed to disable user ${user.username}: ${e.getMessage}")
-          (user.username, false)
+      }.handleError { e =>
+        println(s"Failed to disable user ${user.username}: ${e.getMessage}")
+        (user.username, false)
       }
     }
   }
 
-  private def removeExistingOTPConfiguration(keycloak: Keycloak, userId: String): Boolean = {
-    try {
-      val realmResource = keycloak.realm("tdr")
-      val userResource = realmResource.users().get(userId)
-
-      // Remove OTP credentials
-      val credentials = userResource.credentials().asScala
-      credentials
-        .filter(_.getType == "otp")
-        .foreach(cred => userResource.removeCredential(cred.getId))
-
-      true
-    } catch {
-      case e: Exception =>
-        println(s"Failed to remove existing OTP configuration for user $userId: ${e.getMessage}")
-        false
+  private def fetchLatestConsignment(user: User, consignments: IO[gcs.Consignments]): IO[Option[ConsignmentInfo]] = {
+    consignments.map { consignment =>
+      consignment.edges
+        .getOrElse(Nil) // List[Option[Edges]]
+        .flatMap(_.toList) // List[Edges]
+        .map(_.node)
+        .map { node =>
+          val created = node.createdDatetime
+          val exported = node.exportDatetime
+          val latestDate = (created, exported) match {
+            case (Some(c), Some(e)) => if (c.isAfter(e)) c else e
+            case (Some(c), None) => c
+          }
+          ConsignmentInfo(
+            user.id,
+            user.username,
+            node.consignmentReference,
+            node.consignmentType.get,
+            latestDate
+          )
+        }.sortBy(_.latestDatetime)(Ordering[ZonedDateTime].reverse).headOption
     }
   }
 
-  //Alternative enforeOTP instead of disabling user
-  private def enforceOTPForUsers(keycloak: Keycloak, inactiveUsers: List[InactiveUser]): List[(String, Boolean)] = {
-    val realmResource = keycloak.realm("tdr")
-    val usersResources = realmResource.users()
+  override def run(args: List[String]): IO[ExitCode] = {
+    val keycloakUtils = new KeycloakUtils()
+    implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend(options = SttpBackendOptions.connectionTimeout(180.seconds))
+    implicit val keycloakDeployment: TdrKeycloakDeployment = TdrKeycloakDeployment(Config.authUrl, "tdr", 60)
+    val getConsignmentsClient = new GraphQLClient[gcs.Data, gcs.Variables](Config.apiUrl)
+    val graphQlApi: GraphQlApiService = GraphQlApiService(keycloakUtils, getConsignmentsClient)
 
-    inactiveUsers.map { user =>
-      try {
-        val userResource = usersResources.get(user.id)
-        val userRep = userResource.toRepresentation()
-
-        // First remove any existing OTP configuration
-        val otpRemoved = removeExistingOTPConfiguration(keycloak, user.id)
-        if (!otpRemoved) {
-          throw new Exception("Failed to remove existing OTP configuration")
-        }
-
-        // Set required actions for new OTP setup
-        val requiredActions = new java.util.ArrayList[String]()
-        requiredActions.add("CONFIGURE_TOTP") // Require OTP setup
-        userRep.setRequiredActions(requiredActions)
-
-        // Add attributes to track when OTP was enforced
-        val attributes: Map[String, List[String]] = Map(
-          "otpEnforcedDate" -> List(LocalDateTime.now().toString),
-          "otpEnforcedReason" -> List("Automatically enforced due to inactivity - Previous OTP configuration removed")
+    for {
+      auth <- authFromConfig()
+      apiConf <- apiFromConfig()
+      keycloak = initializeKeycloak(apiConf)
+      users = findUsersCreatedBeforePeriod(keycloak, periodMonths = 6)
+      _ = println(s"Found ${users.length} users older than 6 months")
+      _ = println(s"Found ${users.map(_.username)}")
+      consignmentsList <- IO.traverse(users) { user =>
+        val consignments = graphQlApi.getConsignments(
+          config = apiConf,
+          userId = UUID.fromString(user.id)
         )
-
-        val existingAttributes = Option(userRep.getAttributes)
-          .map(_.asScala.toMap.view.mapValues(_.asScala.toList).toMap)
-          .getOrElse(Map.empty)
-
-        val mergedAttributes = existingAttributes ++ attributes
-        userRep.setAttributes(mergedAttributes.view.mapValues(_.asJava).toMap.asJava)
-
-        userResource.update(userRep)
-
-        (user.username, true)
-      } catch {
-        case e: Exception =>
-          println(s"Failed to enforce OTP for user ${user.username}: ${e.getMessage}")
-          (user.username, false)
+        //Filter consignment by latest createdDatetime/exportDatetime
+        fetchLatestConsignment(user, consignments)
+        //Only add users whose createdDatetime is older than 6 months
       }
-    }
-  }
-
-  private def exportInactiveUsers(users: List[InactiveUser], filename: String): Unit = {
-    val json = users.asJson.spaces2
-    scala.reflect.io.File(filename).writeAll(json)
-
-    // Also print a summary to console
-    println("\nInactive Users Summary:")
-    println("------------------------")
-    users.foreach { user =>
-      println(s"""
-                 |Username: ${user.username}
-                 |Last Login: ${user.lastLoginDate.getOrElse("Never")}
-                 |Email: ${user.email.getOrElse("N/A")}
-                 |""".stripMargin)
-    }
-  }
-
-  val keycloak = initializeKeycloak(authFromConfig().unsafeRunSync())
-  try {
-    val inactiveUsers = findInactiveUsers(keycloak, inactivityPeriodDays = 30)
-
-    println(s"Found ${inactiveUsers.length} inactive users")
-
-    //DISABLE THE USERS
-/*    val results = disableInactiveUsers(keycloak, inactiveUsers)
-
-    println("\nDisable Results:")
-    println("----------------")
-    results.foreach {
-      case (username, true) => println(s"Successfully disabled: $username")
-      case (username, false) => println(s"Failed to disable: $username")
-    }
-
-    val successCount = results.count(_._2)
-    println(s"\nSummary: Successfully disabled $successCount out of ${results.length} users")*/
-
-    //ENFORCE OTP
-/*    val results = enforceOTPForUsers(keycloak, inactiveUsers)
-
-    println("\nOTP Enforcement Results:")
-    println("-----------------------")
-    results.foreach {
-      case (username, true) => println(s"Successfully enforced OTP for: $username")
-      case (username, false) => println(s"Failed to enforce OTP for: $username")
-    }
-
-    val successCount = results.count(_._2)
-    println(s"\nSummary: Successfully enforced OTP for $successCount out of ${results.length} users")*/
-
-
-//    exportInactiveUsers(inactiveUsers, "inactive_users_report.json")
-//    println("Report exported to inactive_users_report.json")
-
-  } catch {
-    case e: Exception =>
-      println(s"Error: ${e.getMessage}")
-      e.printStackTrace()
-  } finally {
-    keycloak.close()
+      testMe = List(Some(ConsignmentInfo("c98a665f-5ec2-4230-bcb6-555e7feb8ee7", "thanh-test-judgment", "TDR-2025-XNCQ", "judgment", ZonedDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()))))
+      _ = testMe.flatten.foreach(println(_))
+      _ = disableInactiveUsers(keycloak, inactiveUsers = testMe.flatten, isOlderThanSixMonths)
+      //      _ = exportInactiveUsers(inactiveUsers, "inactive_users_report.json")
+      _ = keycloak.close()
+    } yield ExitCode.Success
   }
 }

@@ -26,6 +26,9 @@ lazy val root = (project in file("."))
       slf4j,
       wiremock % Test,
       circeExtras % Test,
+      authUtils,
+      generatedGraphql,
+      graphqlClient
     ),
     Test / fork := true,
     Test / javaOptions += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf",
