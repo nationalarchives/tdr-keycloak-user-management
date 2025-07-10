@@ -28,7 +28,8 @@ lazy val root = (project in file("."))
       circeExtras % Test,
       authUtils,
       generatedGraphql,
-      graphqlClient
+      graphqlClient,
+      mockito % Test
     ),
     Test / fork := true,
     Test / javaOptions += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf",

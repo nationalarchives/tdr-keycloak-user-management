@@ -50,16 +50,6 @@ object KeycloakInactiveUsers extends IOApp {
       .build()
   }
 
-  private def initializeKeycloak(api: ConsignmentApi): Keycloak = {
-    KeycloakBuilder.builder()
-      .serverUrl(api.url)
-      .realm("tdr")
-      .clientId(api.client)
-      .clientSecret(api.secret)
-      .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-      .build()
-  }
-
   private def formatDate(timestamp: Long): String = {
     val instant = Instant.ofEpochMilli(timestamp)
     LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toString
