@@ -17,7 +17,7 @@ object Config {
 
   private val configFactory: TypeSafeConfig = ConfigFactory.load
   val authUrl: String = configFactory.getString("auth.url")
-  val apiUrl: String = configFactory.getString("api.url")
+  val apiUrl: String = configFactory.getString("consignment-api.url")
 
   def getClientSecret(secretPath: String, endpoint: String): String = {
     val ssmClient: SsmClient = SsmClient.builder()
@@ -38,13 +38,13 @@ object Config {
     )
   })
 
-  def apiFromConfig(): IO[Api] = ConfigSource.default.loadF[IO, Configuration].map(config => {
+  def apiFromConfig(): IO[ConsignmentApi] = ConfigSource.default.loadF[IO, Configuration].map(config => {
     val kmsUtils = KMSUtils(kms(config.kms.endpoint), Map("LambdaFunctionName" -> config.function.name))
-    Api(url = kmsUtils.decryptValue(config.auth.url),
-      client = config.api.client,
-      secret = getClientSecret(config.api.secretPath, config.ssm.endpoint),
-      config.api.secretPath,
-      realm = config.api.realm
+    ConsignmentApi(url = kmsUtils.decryptValue(config.consignmentApi.url),
+      client = config.consignmentApi.client,
+      secret = getClientSecret(config.consignmentApi.secretPath, config.ssm.endpoint),
+      config.consignmentApi.secretPath,
+      realm = config.consignmentApi.realm
     )
   })
 
@@ -52,6 +52,6 @@ object Config {
   case class Kms(endpoint: String)
   case class Ssm(endpoint: String)
   case class Auth(url: String, secret: String, secretPath: String, client: String, realm: String)
-  case class Configuration(auth: Auth, api: Api, function: LambdaFunction, kms: Kms, ssm: Ssm)
-  case class Api(url: String, client: String, secret: String, secretPath: String, realm: String)
+  case class Configuration(auth: Auth, consignmentApi: ConsignmentApi, function: LambdaFunction, kms: Kms, ssm: Ssm)
+  case class ConsignmentApi(url: String, client: String, secret: String, secretPath: String, realm: String)
 }
