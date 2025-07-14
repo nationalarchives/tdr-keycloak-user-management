@@ -6,6 +6,7 @@ import graphql.codegen.types.ConsignmentFilters
 import io.circe.Decoder
 import io.circe.generic.semiauto.deriveDecoder
 import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend}
+import uk.gov.nationalarchives.keycloak.users.Config.ConsignmentApi
 import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment}
 
@@ -20,7 +21,7 @@ class GraphQlApiService(keycloak: KeycloakUtils, getConsignmentsClient: GraphQLC
   implicit val addOrUpdateBulkFileMetadataInputDecoder: Decoder[ConsignmentFilters] = deriveDecoder
   implicit val ucslvVariablesDecoder: Decoder[gcs.Variables] = deriveDecoder
 
-  def getConsignments(config: Config.ConsignmentApi, userId: UUID): IO[gcs.Consignments] = for {
+  def getConsignments(config: ConsignmentApi, userId: UUID): IO[gcs.Consignments] = for {
     token <- keycloak.serviceAccountToken(config.client, config.secret).toIO
     result <- getConsignmentsClient.getResult(token, gcs.document, Some(gcs.Variables(limit = 10, None, currentPage = Some(0), consignmentFiltersInput = Some(ConsignmentFilters(Some(userId), consignmentType = None))))).toIO
     data <- IO.fromOption(result.data)(new RuntimeException(result.errors.headOption.get.message))

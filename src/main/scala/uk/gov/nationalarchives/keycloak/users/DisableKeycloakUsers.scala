@@ -1,20 +1,13 @@
 package uk.gov.nationalarchives.keycloak.users
 
-import cats.effect.{ExitCode, IO, IOApp}
+import cats.effect.IO
 import cats.implicits.toTraverseOps
 import graphql.codegen.GetConsignments.{getConsignments => gcs}
 import io.circe._
 import io.circe.generic.semiauto._
-import org.keycloak.OAuth2Constants
-import org.keycloak.admin.client.{Keycloak, KeycloakBuilder}
-import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, SttpBackendOptions}
-import uk.gov.nationalarchives.keycloak.users.Config.{Auth, ConsignmentApi, apiFromConfig, authFromConfig}
-import uk.gov.nationalarchives.tdr.GraphQLClient
-import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment}
+import org.keycloak.admin.client.Keycloak
 
 import java.time.{Instant, LocalDateTime, ZoneId, ZonedDateTime}
-import java.util.UUID
-import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 
 case class User(
@@ -35,27 +28,17 @@ case class ConsignmentInfo(
                             latestDatetime: ZonedDateTime
                           )
 
-object KeycloakInactiveUsers extends IOApp {
+object KeycloakInactiveUsers {
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
   implicit val inactiveUserEncoder: Encoder[User] = deriveEncoder
-
-  private def initializeKeycloak(auth: Auth): Keycloak = {
-    KeycloakBuilder.builder()
-      .serverUrl(auth.url)
-      .realm("tdr")
-      .clientId(auth.client)
-      .clientSecret(auth.secret)
-      .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-      .build()
-  }
 
   private def formatDate(timestamp: Long): String = {
     val instant = Instant.ofEpochMilli(timestamp)
     LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toString
   }
 
-  private def findUsersCreatedBeforePeriod(keycloak: Keycloak, userType: String, periodMonths: Int): List[User] = {
+  def findUsersCreatedBeforePeriod(keycloak: Keycloak, userType: String, periodMonths: Int): List[User] = {
     val realmResource = keycloak.realm("tdr")
     val usersResource = realmResource.users()
 
@@ -91,16 +74,16 @@ object KeycloakInactiveUsers extends IOApp {
     }
   }
 
-  private def isOlderThanGivenPeriod(consignment: ConsignmentInfo, period: Int): Boolean = {
+  def isOlderThanGivenPeriod(consignment: ConsignmentInfo, period: Int): Boolean = {
     consignment.latestDatetime.isBefore(ZonedDateTime.now().minusMonths(period))
   }
 
-  private def disableInactiveUsers(
-                                    keycloak: Keycloak,
-                                    inactiveUsers: List[ConsignmentInfo],
-                                    shouldDisable: (ConsignmentInfo, Int) => Boolean,
-                                    inactivityPeriod: Int
-                                  ): IO[List[(String, Boolean)]] = {
+  def disableInactiveUsers(
+                            keycloak: Keycloak,
+                            inactiveUsers: List[ConsignmentInfo],
+                            shouldDisable: (ConsignmentInfo, Int) => Boolean,
+                            inactivityPeriod: Int
+                          ): IO[List[(String, Boolean)]] = {
     val realmResource = keycloak.realm("tdr")
     val usersResources = realmResource.users()
 
@@ -113,7 +96,7 @@ object KeycloakInactiveUsers extends IOApp {
 
         val attributes: Map[String, List[String]] = Map(
           "disabledDate" -> List(LocalDateTime.now().toString),
-          "disabledReason" -> List(s"Automatically disabled due to inactivity in the last ${inactivityPeriod} months")
+          "disabledReason" -> List(s"Automatically disabled due to inactivity in the last $inactivityPeriod months")
         )
 
         val existingAttributes = Option(userRep.getAttributes)
@@ -135,7 +118,7 @@ object KeycloakInactiveUsers extends IOApp {
     }
   }
 
-  private def fetchLatestConsignment(user: User, consignments: IO[gcs.Consignments]): IO[Option[ConsignmentInfo]] = {
+  def fetchLatestConsignment(user: User, consignments: IO[gcs.Consignments]): IO[Option[ConsignmentInfo]] = {
     consignments.map { consignment =>
       consignment.edges
         .getOrElse(Nil) // List[Option[Edges]]
@@ -157,35 +140,5 @@ object KeycloakInactiveUsers extends IOApp {
           )
         }.sortBy(_.latestDatetime)(Ordering[ZonedDateTime].reverse).headOption
     }
-  }
-
-  override def run(args: List[String]): IO[ExitCode] = {
-    val userType = args.headOption.getOrElse(sys.exit())
-    val inactivityPeriod = args.lift(1).map(_.toInt).getOrElse(6) // Default to 6 months if not provided
-
-    val keycloakUtils = new KeycloakUtils()
-    implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend(options = SttpBackendOptions.connectionTimeout(180.seconds))
-    implicit val keycloakDeployment: TdrKeycloakDeployment = TdrKeycloakDeployment(Config.authUrl, "tdr", 60)
-    val getConsignmentsClient = new GraphQLClient[gcs.Data, gcs.Variables](Config.apiUrl)
-    val graphQlApi: GraphQlApiService = GraphQlApiService(keycloakUtils, getConsignmentsClient)
-
-    for {
-      authConf <- authFromConfig()
-      consignmentApiConf <- apiFromConfig()
-      keycloak = initializeKeycloak(authConf)
-      users = findUsersCreatedBeforePeriod(keycloak, userType, periodMonths = 6)
-      _ = println(s"Found ${users.length} $userType users older than 6 months")
-      _ = println(s"Found ${users.map(_.username)}")
-      consignmentsList <- IO.traverse(users) { user =>
-        val consignments = graphQlApi.getConsignments(
-          config = consignmentApiConf,
-          userId = UUID.fromString(user.id)
-        )
-        fetchLatestConsignment(user, consignments)
-      }
-      testMe = List(Some(ConsignmentInfo("c98a665f-5ec2-4230-bcb6-555e7feb8ee7", "thanh-test-judgment", "TDR-2025-XNCQ", "judgment", ZonedDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()))))
-      _ <- disableInactiveUsers(keycloak, inactiveUsers = testMe.flatten, isOlderThanGivenPeriod, inactivityPeriod)
-      _ = keycloak.close()
-    } yield ExitCode.Success
   }
 }
