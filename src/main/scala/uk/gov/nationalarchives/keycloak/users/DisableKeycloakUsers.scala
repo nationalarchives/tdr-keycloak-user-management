@@ -28,7 +28,7 @@ case class ConsignmentInfo(
                             latestDatetime: ZonedDateTime
                           )
 
-object KeycloakInactiveUsers {
+object DisableKeycloakUsers {
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
   implicit val inactiveUserEncoder: Encoder[User] = deriveEncoder
@@ -93,19 +93,6 @@ object KeycloakInactiveUsers {
         val userRep = userResource.toRepresentation()
 
         userRep.setEnabled(false)
-
-        val attributes: Map[String, List[String]] = Map(
-          "disabledDate" -> List(LocalDateTime.now().toString),
-          "disabledReason" -> List(s"Automatically disabled due to inactivity in the last $inactivityPeriod months")
-        )
-
-        val existingAttributes = Option(userRep.getAttributes)
-          .map(_.asScala.toMap.view.mapValues(_.asScala.toList).toMap)
-          .getOrElse(Map.empty)
-
-        val mergedAttributes = existingAttributes ++ attributes
-
-        userRep.setAttributes(mergedAttributes.view.mapValues(_.asJava).toMap.asJava)
 
         userResource.update(userRep)
 
