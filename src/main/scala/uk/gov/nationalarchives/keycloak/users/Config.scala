@@ -16,7 +16,10 @@ import java.net.URI
 object Config {
 
   private val configFactory: TypeSafeConfig = ConfigFactory.load
-  val authUrl: String = configFactory.getString("auth.url")
+  val authUrl: String = {
+    val kmsUtils = KMSUtils(kms(configFactory.getString("kms.endpoint")), Map("LambdaFunctionName" -> configFactory.getString("function.name")))
+    kmsUtils.decryptValue(configFactory.getString("auth.url"))
+  }
   val apiUrl: String = configFactory.getString("consignment-api.url")
 
   def getClientSecret(secretPath: String, endpoint: String): String = {

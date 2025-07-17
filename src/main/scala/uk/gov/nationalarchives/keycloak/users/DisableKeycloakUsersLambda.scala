@@ -53,8 +53,7 @@ class DisableKeycloakUsersLambda extends RequestHandler[ScheduledEvent, Boolean]
         )
         DisableKeycloakUsers.fetchLatestConsignment(user, consignments)
       }
-      testMe = List(Some(ConsignmentInfo("c98a665f-5ec2-4230-bcb6-555e7feb8ee7", "thanh-test-judgment", "TDR-2025-XNCQ", "judgment", ZonedDateTime.of(2024, 1, 1, 0, 0, 0, 0, ZoneId.systemDefault()))))
-      inactiveUsers <- DisableKeycloakUsers.disableInactiveUsers(keycloak, inactiveUsers = testMe.flatten, DisableKeycloakUsers.isOlderThanGivenPeriod, payload.inactivityPeriod)
+      inactiveUsers <- DisableKeycloakUsers.disableInactiveUsers(keycloak, inactiveUsers = consignmentsList.flatten, DisableKeycloakUsers.isOlderThanGivenPeriod, payload.inactivityPeriod)
       _ <- IO(logger.info(s"Disabled ${inactiveUsers.length} users: ${inactiveUsers.map(_._1)}"))
       _ = keycloak.close()
     } yield true

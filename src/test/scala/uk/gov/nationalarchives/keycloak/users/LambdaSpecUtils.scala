@@ -15,6 +15,7 @@ import uk.gov.nationalarchives.keycloak.users.LambdaSpecUtils.TestUserRequest
 
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
+import java.util.UUID
 import scala.jdk.CollectionConverters._
 
 class LambdaSpecUtils(wiremockAuthServer: WireMockServer, wiremockSsmServer: WireMockServer) {
@@ -55,6 +56,107 @@ class LambdaSpecUtils(wiremockAuthServer: WireMockServer, wiremockSsmServer: Wir
     )
     wiremockAuthServer.stubFor(post(urlEqualTo(s"$baseAdminUrl")).willReturn(aResponse().withStatus(201).withHeader("Location", s"/$userId")))
     wiremockAuthServer.stubFor(put(urlEqualTo(s"$baseAdminUrl/$userId/execute-actions-email")).willReturn(status(200)))
+  }
+
+  def mockAuthServerUserResponse(): Unit = {
+    wiremockAuthServer.stubFor(post(urlEqualTo("/auth/realms/tdr/protocol/openid-connect/token"))
+      .willReturn(okJson("{\"access_token\": \"abcde\"}"))
+    )
+
+    val userId = UUID.randomUUID().toString
+
+    wiremockAuthServer.stubFor(
+      get(urlEqualTo("/auth/admin/realms/tdr/users"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              s"""
+            [
+              {
+                "id": "$userId",
+                "username": "testuser",
+                "email": "testuser@example.com",
+                "enabled": true
+              }
+            ]
+          """.stripMargin
+            )
+        )
+    )
+
+    wiremockAuthServer.stubFor(
+      get(urlEqualTo(s"/auth/admin/realms/tdr/users/$userId/groups"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              """
+            [
+              {
+                "id": "group-id-1",
+                "name": "judgment_user",
+                "path": "/judgment_users"
+              },
+              {
+                "id": "group-id-2",
+                "name": "some-other-group",
+                "path": "/some-other-group"
+              }
+            ]
+          """.stripMargin
+            )
+        )
+    )
+
+    wiremockAuthServer.stubFor(
+      get(urlEqualTo(s"/auth/admin/realms/tdr/users/$userId"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              s"""
+          {
+            "id": "$userId",
+            "username": "testuser",
+            "email": "testuser@example.com",
+            "enabled": true,
+            "firstName": "Test",
+            "lastName": "User"
+          }
+          """.stripMargin
+            )
+        )
+    )
+    wiremockAuthServer.stubFor(
+      put(urlEqualTo(s"/auth/admin/realms/tdr/users/$userId"))
+        .willReturn(
+          aResponse()
+            .withStatus(200)
+            .withHeader("Content-Type", "application/json")
+            .withBody(
+              s"""
+          {
+            "id": "$userId",
+            "username": "testuser",
+            "email": "testuser@example.com",
+            "enabled": false,
+            "firstName": "Test",
+            "lastName": "User"
+          }
+          """.stripMargin
+            )
+        )
+    )
+  }
+
+  def fetchUserCalls: List[ServeEvent] = {
+    wiremockAuthServer.getAllServeEvents.asScala
+      .filter(s => s.getRequest.getUrl == baseAdminUrl && s.getRequest.getMethod == RequestMethod.GET)
+      .toList
   }
 
   def userCreateCalls: List[ServeEvent] = {
