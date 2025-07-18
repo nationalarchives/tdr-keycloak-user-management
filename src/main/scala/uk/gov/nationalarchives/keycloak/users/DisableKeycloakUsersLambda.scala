@@ -12,7 +12,7 @@ import org.slf4j.Logger
 import org.slf4j.simple.SimpleLoggerFactory
 import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, SttpBackendOptions}
 import uk.gov.nationalarchives.keycloak.users.Config.{apiFromConfig, authFromConfig}
-import uk.gov.nationalarchives.keycloak.users.DisableKeycloakUsersLambda.{InactivityPayload, LambdaResponse}
+import uk.gov.nationalarchives.keycloak.users.DisableKeycloakUsersLambda.{EventInput, LambdaResponse}
 import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment}
 
@@ -37,14 +37,13 @@ class DisableKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaRe
       .noSpaces
 
     val program = for {
-      payload <- IO.fromEither(decode[InactivityPayload](detailJson))
-      _ <- IO(logger.info(s"[INFO] Processing user type: ${payload.userType}, inactivity period: ${payload.inactivityPeriod} months\n"))
+      payload <- IO.fromEither(decode[EventInput](detailJson))
+      _ <- IO(logger.info(s"[INFO] Processing user type: ${payload.userType}, inactivity period: ${payload.inactivityPeriodDays} months\n"))
       authConf <- authFromConfig()
       consignmentApiConf <- apiFromConfig()
       keycloak = KeycloakUsers.keyCloakAdminClient(authConf)
       users = DisableKeycloakUsers.findUsersCreatedBeforePeriod(keycloak, payload.userType, periodMonths = 6)
-      _ <- IO(logger.info(s"Found ${users.length} ${payload.userType} users older than 6 months"))
-      _ <- IO(logger.info(s"Found ${users.map(_.username)}"))
+      _ <- IO(logger.info(s"Found ${users.length} ${payload.userType} users created over 6 months ago"))
       consignmentsList <- IO.traverse(users) { user =>
         val consignments = graphQlApi.getConsignments(
           config = consignmentApiConf,
@@ -52,9 +51,9 @@ class DisableKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaRe
         )
         DisableKeycloakUsers.fetchLatestConsignment(user, consignments)
       }
-      inactiveUsers <- DisableKeycloakUsers.disableInactiveUsers(keycloak, inactiveUsers = consignmentsList.flatten, DisableKeycloakUsers.isOlderThanGivenPeriodDays, payload.inactivityPeriod)
+      inactiveUsers <- DisableKeycloakUsers.disableInactiveUsers(keycloak, inactiveUsers = consignmentsList.flatten, DisableKeycloakUsers.isOlderThanGivenPeriodDays, payload.inactivityPeriodDays)
       _ = keycloak.close()
-    } yield LambdaResponse(isSuccess = true, "Users disabled successfully: " + inactiveUsers.map(_.username).mkString(", "))
+    } yield LambdaResponse(isSuccess = true, "Users disabled successfully: " + inactiveUsers.filter(_.isDisabled).map(_.username).mkString(", "))
 
     program
       .handleErrorWith(error => {
@@ -66,7 +65,7 @@ class DisableKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaRe
 
 object DisableKeycloakUsersLambda {
 
-  case class InactivityPayload(userType: String, inactivityPeriod: Int)
+  case class EventInput(userType: String, inactivityPeriodDays: Int)
 
   case class LambdaResponse(isSuccess: Boolean, message: String)
 }

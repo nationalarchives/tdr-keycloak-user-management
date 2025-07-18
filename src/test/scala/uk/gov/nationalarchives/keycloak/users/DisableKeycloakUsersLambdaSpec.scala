@@ -41,7 +41,7 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriod" -> 90
+      "inactivityPeriodDays" -> 90
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
@@ -105,7 +105,7 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriod" -> 90
+      "inactivityPeriodDays" -> 90
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
@@ -151,7 +151,7 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriod" -> 90
+      "inactivityPeriodDays" -> 90
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
