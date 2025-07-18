@@ -6,32 +6,17 @@ import graphql.codegen.GetConsignments.{getConsignments => gcs}
 import io.circe._
 import io.circe.generic.semiauto._
 import org.keycloak.admin.client.Keycloak
+import org.slf4j.Logger
+import org.slf4j.simple.SimpleLoggerFactory
 
 import java.time.{Instant, LocalDateTime, ZoneId, ZonedDateTime}
 import scala.jdk.CollectionConverters._
 
-case class User(
-                 id: String,
-                 username: String,
-                 email: Option[String],
-                 firstName: Option[String],
-                 lastName: Option[String],
-                 createdTimestamp: Option[String],
-                 group: Option[List[String]]
-               )
-
-case class ConsignmentInfo(
-                            userid: String,
-                            username: String,
-                            consignmentReference: String,
-                            consignmentType: String,
-                            latestDatetime: ZonedDateTime
-                          )
-
 object DisableKeycloakUsers {
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
-
   implicit val inactiveUserEncoder: Encoder[User] = deriveEncoder
+
+  val logger: Logger = new SimpleLoggerFactory().getLogger(this.getClass.getName)
 
   private def formatDate(timestamp: Long): String = {
     val instant = Instant.ofEpochMilli(timestamp)
@@ -45,7 +30,7 @@ object DisableKeycloakUsers {
     val users = usersResource.list().asScala.toList
 
     val cutoffTime = LocalDateTime.now()
-      .minusMonths(periodMonths) //use minusHours to test
+      .minusMonths(periodMonths)
       .atZone(ZoneId.systemDefault())
       .toInstant
       .toEpochMilli
@@ -74,16 +59,16 @@ object DisableKeycloakUsers {
     }
   }
 
-  def isOlderThanGivenPeriod(consignment: ConsignmentInfo, period: Int): Boolean = {
-    consignment.latestDatetime.isBefore(ZonedDateTime.now().minusMonths(period))
+  def isOlderThanGivenPeriodDays(consignment: UserAndConsignmentInfo, period: Int): Boolean = {
+    consignment.latestDatetime.isBefore(ZonedDateTime.now().minusDays(period))
   }
 
   def disableInactiveUsers(
                             keycloak: Keycloak,
-                            inactiveUsers: List[ConsignmentInfo],
-                            shouldDisable: (ConsignmentInfo, Int) => Boolean,
+                            inactiveUsers: List[UserAndConsignmentInfo],
+                            shouldDisable: (UserAndConsignmentInfo, Int) => Boolean,
                             inactivityPeriod: Int
-                          ): IO[List[(String, Boolean)]] = {
+                          ): IO[List[UserAndConsignmentInfo]] = {
     val realmResource = keycloak.realm("tdr")
     val usersResources = realmResource.users()
 
@@ -96,16 +81,16 @@ object DisableKeycloakUsers {
 
         userResource.update(userRep)
 
-        println(s"Successfully disabled: ${user.username}")
-        (user.username, true)
+        logger.info(s"Successfully disabled user ${user.username}")
+        user.copy(isDisabled = true)
       }.handleError { e =>
-        println(s"Failed to disable user ${user.username}: ${e.getMessage}")
-        (user.username, false)
+        logger.error(s"Failed to disable user ${user.username}: ${e.getMessage}")
+        user
       }
     }
   }
 
-  def fetchLatestConsignment(user: User, consignments: IO[gcs.Consignments]): IO[Option[ConsignmentInfo]] = {
+  def fetchLatestConsignment(user: User, consignments: IO[gcs.Consignments]): IO[Option[UserAndConsignmentInfo]] = {
     consignments.map { consignment =>
       consignment.edges
         .getOrElse(Nil) // List[Option[Edges]]
@@ -118,7 +103,7 @@ object DisableKeycloakUsers {
             case (Some(c), Some(e)) => if (c.isAfter(e)) c else e
             case (Some(c), None) => c
           }
-          ConsignmentInfo(
+          UserAndConsignmentInfo(
             user.id,
             user.username,
             node.consignmentReference,
@@ -128,4 +113,23 @@ object DisableKeycloakUsers {
         }.sortBy(_.latestDatetime)(Ordering[ZonedDateTime].reverse).headOption
     }
   }
+
+  case class User(
+                   id: String,
+                   username: String,
+                   email: Option[String],
+                   firstName: Option[String],
+                   lastName: Option[String],
+                   createdTimestamp: Option[String],
+                   group: Option[List[String]]
+                 )
+
+  case class UserAndConsignmentInfo(
+                                     userid: String,
+                                     username: String,
+                                     consignmentReference: String,
+                                     consignmentType: String,
+                                     latestDatetime: ZonedDateTime,
+                                     isDisabled: Boolean = false
+                                   )
 }

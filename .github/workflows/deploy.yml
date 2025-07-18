@@ -39,6 +39,7 @@ jobs:
         run: |
           aws lambda update-function-code --function-name tdr-create-keycloak-user-s3-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-code-mgmt --s3-key keycloak-user-management/${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
           aws lambda update-function-code --function-name tdr-create-keycloak-user-api-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-code-mgmt --s3-key keycloak-user-management/${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
+          aws lambda update-function-code --function-name tdr-disable-keycloak-user-api-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-code-mgmt --s3-key keycloak-user-management/${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
       - name: Send service updated message
         uses: slackapi/slack-github-action@v2.1.0
         with:

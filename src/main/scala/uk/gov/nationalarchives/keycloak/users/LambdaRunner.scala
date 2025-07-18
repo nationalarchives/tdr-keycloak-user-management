@@ -10,8 +10,8 @@ import scala.jdk.CollectionConverters._
 
 object LambdaRunner extends App {
 
-  sendCsvLambdaRequest()
-  sendApiLambdaRequest()
+//  sendCsvLambdaRequest()
+//  sendApiLambdaRequest()
   sendDisableKeycloakUserRequest()
 
   def sendCsvLambdaRequest() = {

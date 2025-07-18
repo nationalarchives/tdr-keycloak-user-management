@@ -3,12 +3,11 @@ package uk.gov.nationalarchives.keycloak.users
 import com.amazonaws.services.lambda.runtime.events.ScheduledEvent
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
-import jakarta.ws.rs.InternalServerErrorException
 import org.mockito.MockitoSugar
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.tdr.error.HttpException
+import uk.gov.nationalarchives.keycloak.users.DisableKeycloakUsersLambda.LambdaResponse
 
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
@@ -42,7 +41,7 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriod" -> 6
+      "inactivityPeriod" -> 90
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
@@ -86,7 +85,7 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
 
 
     val response = new DisableKeycloakUsersLambda().handleRequest(scheduleEvent, null)
-    response shouldBe true
+    response shouldBe LambdaResponse(isSuccess = true, "Users disabled successfully: testuser")
   }
 
   "handleRequest" should "fail if the scheduledEvent parameters contains invalid json" in {
@@ -96,16 +95,17 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
     scheduleEvent.setDetail(eventDetailsJava)
-    intercept[io.circe.Error] {
-      new DisableKeycloakUsersLambda().handleRequest(scheduleEvent, null)
-    }
+
+    val result = new DisableKeycloakUsersLambda().handleRequest(scheduleEvent, null)
+
+    result shouldBe LambdaResponse(isSuccess = false, "DecodingFailure at .userType: Missing required field")
   }
 
   "handleRequest" should "fail if call to the keycloak api fails" in {
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriod" -> 6
+      "inactivityPeriod" -> 90
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
@@ -120,16 +120,16 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
         )
     )
 
-    intercept[InternalServerErrorException] {
-      new DisableKeycloakUsersLambda().handleRequest(scheduleEvent, null)
-    }
+    val result = new DisableKeycloakUsersLambda().handleRequest(scheduleEvent, null)
+
+    result shouldBe LambdaResponse(isSuccess = false, "HTTP 500 Internal Server Error")
   }
 
   "handleRequest" should "throw an exception if call to the graphql fails" in {
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriod" -> 6
+      "inactivityPeriod" -> 90
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
@@ -144,16 +144,14 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
           .withBody("Internal Server Error"))
     )
 
-    intercept[HttpException] {
-      new DisableKeycloakUsersLambda().handleRequest(scheduleEvent, null)
-    }
+    LambdaResponse(isSuccess = false, "HTTP 500 Internal Server Error")
   }
 
   "handleRequest" should "not disable a user if their last activity is within 6 months" in {
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriod" -> 6
+      "inactivityPeriod" -> 90
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
@@ -200,6 +198,6 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
     )
 
     val response = new DisableKeycloakUsersLambda().handleRequest(scheduleEvent, null)
-    response shouldBe true
+    response shouldBe LambdaResponse(isSuccess = true, "Users disabled successfully: ")
   }
 }
