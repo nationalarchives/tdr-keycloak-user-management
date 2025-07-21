@@ -49,7 +49,7 @@ object LambdaRunner extends App {
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriodDays" -> 6
+      "inactivityPeriodDays" -> 180
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
