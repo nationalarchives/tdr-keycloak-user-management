@@ -42,8 +42,7 @@ object Config {
   })
 
   def apiFromConfig(): IO[ConsignmentApi] = ConfigSource.default.loadF[IO, Configuration].map(config => {
-    val kmsUtils = KMSUtils(kms(config.kms.endpoint), Map("LambdaFunctionName" -> config.function.name))
-    ConsignmentApi(url = kmsUtils.decryptValue(config.consignmentApi.url),
+    ConsignmentApi(url = config.consignmentApi.url,
       client = config.consignmentApi.client,
       secret = getClientSecret(config.consignmentApi.secretPath, config.ssm.endpoint),
       config.consignmentApi.secretPath,
