@@ -38,7 +38,7 @@ class DisableKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaRe
 
     val program = for {
       payload <- IO.fromEither(decode[EventInput](detailJson))
-      _ <- IO(logger.info(s"[INFO] Processing user type: ${payload.userType}, inactivity period: ${payload.inactivityPeriodDays} months\n"))
+      _ <- IO(logger.info(s"[INFO] Processing user type: ${payload.userType}, inactivity period: ${payload.inactivityPeriodDays} days\n"))
       authConf <- authFromConfig()
       consignmentApiConf <- apiFromConfig()
       keycloak = KeycloakUsers.keyCloakAdminClient(authConf)

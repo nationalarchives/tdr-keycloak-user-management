@@ -10,8 +10,8 @@ import scala.jdk.CollectionConverters._
 
 object LambdaRunner extends App {
 
-//  sendCsvLambdaRequest()
-//  sendApiLambdaRequest()
+  sendCsvLambdaRequest()
+  sendApiLambdaRequest()
   sendDisableKeycloakUserRequest()
 
   def sendCsvLambdaRequest() = {
@@ -49,7 +49,7 @@ object LambdaRunner extends App {
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriod" -> 6
+      "inactivityPeriodDays" -> 6
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
