@@ -29,7 +29,7 @@ class GraphQlApiServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
 
   val keycloakUtils: KeycloakUtils = mock[KeycloakUtils]
   val graphQlClient: GraphQLClient[gcs.Data, gcs.Variables] = mock[GraphQLClient[gcs.Data, gcs.Variables]]
-  val config: Config.ConsignmentApi = mock[Config.ConsignmentApi]
+  val config: Config.Reporting = mock[Config.Reporting]
   val service = new GraphQlApiService(keycloakUtils, graphQlClient)
   val userId: UUID = UUID.randomUUID()
 

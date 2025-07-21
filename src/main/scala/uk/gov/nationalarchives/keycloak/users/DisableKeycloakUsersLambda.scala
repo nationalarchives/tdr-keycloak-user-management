@@ -11,7 +11,7 @@ import io.circe.parser._
 import org.slf4j.Logger
 import org.slf4j.simple.SimpleLoggerFactory
 import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, SttpBackendOptions}
-import uk.gov.nationalarchives.keycloak.users.Config.{apiFromConfig, authFromConfig}
+import uk.gov.nationalarchives.keycloak.users.Config.{reportingFromConfig, authFromConfig}
 import uk.gov.nationalarchives.keycloak.users.DisableKeycloakUsersLambda.{EventInput, LambdaResponse}
 import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment}
@@ -40,13 +40,13 @@ class DisableKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaRe
       payload <- IO.fromEither(decode[EventInput](detailJson))
       _ <- IO(logger.info(s"[INFO] Processing user type: ${payload.userType}, inactivity period: ${payload.inactivityPeriodDays} days\n"))
       authConf <- authFromConfig()
-      consignmentApiConf <- apiFromConfig()
+      reportingConf <- reportingFromConfig()
       keycloak = KeycloakUsers.keyCloakAdminClient(authConf)
       users = DisableKeycloakUsers.findUsersCreatedBeforePeriod(keycloak, payload.userType, periodMonths = 6)
       _ <- IO(logger.info(s"Found ${users.length} ${payload.userType} users created over 6 months ago"))
       consignmentsList <- IO.traverse(users) { user =>
         val consignments = graphQlApi.getConsignments(
-          config = consignmentApiConf,
+          config = reportingConf,
           userId = UUID.fromString(user.id)
         )
         DisableKeycloakUsers.fetchLatestConsignment(user, consignments)

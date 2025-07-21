@@ -41,12 +41,12 @@ object Config {
     )
   })
 
-  def apiFromConfig(): IO[ConsignmentApi] = ConfigSource.default.loadF[IO, Configuration].map(config => {
-    ConsignmentApi(url = config.consignmentApi.url,
-      client = config.consignmentApi.client,
-      secret = getClientSecret(config.consignmentApi.secretPath, config.ssm.endpoint),
-      config.consignmentApi.secretPath,
-      realm = config.consignmentApi.realm
+  def reportingFromConfig(): IO[Reporting] = ConfigSource.default.loadF[IO, Configuration].map(config => {
+    Reporting(url = config.reporting.url,
+      client = config.reporting.client,
+      secret = getClientSecret(config.reporting.secretPath, config.ssm.endpoint),
+      config.reporting.secretPath,
+      realm = config.reporting.realm
     )
   })
 
@@ -54,6 +54,6 @@ object Config {
   case class Kms(endpoint: String)
   case class Ssm(endpoint: String)
   case class Auth(url: String, secret: String, secretPath: String, client: String, realm: String)
-  case class Configuration(auth: Auth, consignmentApi: ConsignmentApi, function: LambdaFunction, kms: Kms, ssm: Ssm)
-  case class ConsignmentApi(url: String, client: String, secret: String, secretPath: String, realm: String)
+  case class Configuration(auth: Auth, reporting: Reporting, function: LambdaFunction, kms: Kms, ssm: Ssm)
+  case class Reporting(url: String, client: String, secret: String, secretPath: String, realm: String)
 }
