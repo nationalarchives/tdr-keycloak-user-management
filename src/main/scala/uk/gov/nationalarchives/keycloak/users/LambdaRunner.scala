@@ -54,6 +54,6 @@ object LambdaRunner extends App {
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
     scheduleEvent.setDetail(eventDetailsJava)
-    new DisableKeycloakUsersLambda().handleRequest(scheduleEvent, null)
+    new InactiveKeycloakUsersLambda().handleRequest(scheduleEvent, null)
   }
 }

@@ -12,7 +12,7 @@ import org.slf4j.Logger
 import org.slf4j.simple.SimpleLoggerFactory
 import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, SttpBackendOptions}
 import uk.gov.nationalarchives.keycloak.users.Config.{reportingFromConfig, authFromConfig}
-import uk.gov.nationalarchives.keycloak.users.DisableKeycloakUsersLambda.{EventInput, LambdaResponse}
+import uk.gov.nationalarchives.keycloak.users.InactiveKeycloakUsersLambda.{EventInput, LambdaResponse}
 import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment}
 
@@ -20,7 +20,7 @@ import java.util.UUID
 import scala.concurrent.duration.DurationInt
 import scala.jdk.CollectionConverters._
 
-class DisableKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaResponse] {
+class InactiveKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaResponse] {
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend(options = SttpBackendOptions.connectionTimeout(180.seconds))
   implicit val keycloakDeployment: TdrKeycloakDeployment = TdrKeycloakDeployment(Config.authUrl, "tdr", 60)
@@ -42,18 +42,18 @@ class DisableKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaRe
       authConf <- authFromConfig()
       reportingConf <- reportingFromConfig()
       keycloak = KeycloakUsers.keyCloakAdminClient(authConf)
-      users = DisableKeycloakUsers.findUsersCreatedBeforePeriod(keycloak, payload.userType, periodMonths = 6)
-      _ <- IO(logger.info(s"Found ${users.length} ${payload.userType} users created over 6 months ago"))
-      consignmentsList <- IO.traverse(users) { user =>
+      eligibleUsers = InactiveKeycloakUsersUtils.findUsersCreatedBeforePeriod(keycloak, authConf, payload.userType, periodDays = payload.inactivityPeriodDays)
+      _ <- IO(logger.info(s"Found ${eligibleUsers.length} ${payload.userType} users created over ${payload.inactivityPeriodDays} days ago"))
+      eligibleUsersActivity <- IO.traverse(eligibleUsers) { user =>
         val consignments = graphQlApi.getConsignments(
           config = reportingConf,
           userId = UUID.fromString(user.id)
         )
-        DisableKeycloakUsers.fetchLatestConsignment(user, consignments)
+        InactiveKeycloakUsersUtils.fetchLatestConsignment(user, consignments)
       }
-      inactiveUsers <- DisableKeycloakUsers.disableInactiveUsers(keycloak, inactiveUsers = consignmentsList.flatten, DisableKeycloakUsers.isOlderThanGivenPeriodDays, payload.inactivityPeriodDays)
+      inactiveUsers <- InactiveKeycloakUsersUtils.disableInactiveUsers(keycloak, inactiveUsers = eligibleUsersActivity.flatten, InactiveKeycloakUsersUtils.userActivityOlderThanPeriod, payload.inactivityPeriodDays)
       _ = keycloak.close()
-    } yield LambdaResponse(isSuccess = true, "Users disabled successfully: " + inactiveUsers.filter(_.isDisabled).map(_.username).mkString(", "))
+    } yield LambdaResponse(isSuccess = true, "Users disabled successfully: " + inactiveUsers.filter(_.isDisabled).map(_.userId).mkString(", "))
 
     program
       .handleErrorWith(error => {
@@ -63,7 +63,7 @@ class DisableKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaRe
   }
 }
 
-object DisableKeycloakUsersLambda {
+object InactiveKeycloakUsersLambda {
 
   case class EventInput(userType: String, inactivityPeriodDays: Int)
 

@@ -19,7 +19,7 @@ class GraphQlApiService(keycloak: KeycloakUtils, getConsignmentsClient: GraphQLC
   }
 
   implicit val addOrUpdateBulkFileMetadataInputDecoder: Decoder[ConsignmentFilters] = deriveDecoder
-  implicit val ucslvVariablesDecoder: Decoder[gcs.Variables] = deriveDecoder
+  implicit val gcsVariablesDecoder: Decoder[gcs.Variables] = deriveDecoder
 
   def getConsignments(config: Reporting, userId: UUID): IO[gcs.Consignments] = for {
     token <- keycloak.serviceAccountToken(config.client, config.secret).toIO

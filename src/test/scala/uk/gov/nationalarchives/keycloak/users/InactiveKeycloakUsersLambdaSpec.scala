@@ -7,13 +7,14 @@ import org.mockito.MockitoSugar
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.nationalarchives.keycloak.users.DisableKeycloakUsersLambda.LambdaResponse
+import uk.gov.nationalarchives.keycloak.users.InactiveKeycloakUsersLambda.LambdaResponse
 
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 import scala.jdk.CollectionConverters.MapHasAsJava
 
-class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with MockitoSugar with BeforeAndAfterAll {
+class InactiveKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with MockitoSugar with BeforeAndAfterAll {
   val wiremockGraphqlServer = new WireMockServer(9001)
   val wiremockAuthServer = new WireMockServer(9002)
   val wiremockSsmServer = new WireMockServer(9003)
@@ -41,13 +42,14 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriodDays" -> 90
+      "inactivityPeriodDays" -> 180
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
     scheduleEvent.setDetail(eventDetailsJava)
 
-    lambdaSpecUtils.mockAuthServerUserResponse()
+    val userId = UUID.randomUUID().toString
+    lambdaSpecUtils.mockAuthServerUserResponse(userId)
 
     wiremockGraphqlServer.stubFor(
       post(urlEqualTo("/graphql"))
@@ -84,8 +86,8 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
     )
 
 
-    val response = new DisableKeycloakUsersLambda().handleRequest(scheduleEvent, null)
-    response shouldBe LambdaResponse(isSuccess = true, "Users disabled successfully: testuser")
+    val response = new InactiveKeycloakUsersLambda().handleRequest(scheduleEvent, null)
+    response shouldBe LambdaResponse(isSuccess = true, s"Users disabled successfully: $userId")
   }
 
   "handleRequest" should "fail if the scheduledEvent parameters contains invalid json" in {
@@ -96,7 +98,7 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
     scheduleEvent.setDetail(eventDetailsJava)
 
-    val result = new DisableKeycloakUsersLambda().handleRequest(scheduleEvent, null)
+    val result = new InactiveKeycloakUsersLambda().handleRequest(scheduleEvent, null)
 
     result shouldBe LambdaResponse(isSuccess = false, "DecodingFailure at .userType: Missing required field")
   }
@@ -105,7 +107,7 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriodDays" -> 90
+      "inactivityPeriodDays" -> 180
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
@@ -120,7 +122,7 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
         )
     )
 
-    val result = new DisableKeycloakUsersLambda().handleRequest(scheduleEvent, null)
+    val result = new InactiveKeycloakUsersLambda().handleRequest(scheduleEvent, null)
 
     result shouldBe LambdaResponse(isSuccess = false, "HTTP 500 Internal Server Error")
   }
@@ -129,7 +131,7 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriod" -> 90
+      "inactivityPeriod" -> 180
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
@@ -151,7 +153,7 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
       "userType" -> "judgment_user",
-      "inactivityPeriodDays" -> 90
+      "inactivityPeriodDays" -> 180
     )
     val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
 
@@ -197,7 +199,7 @@ class DisableKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Mock
         ))
     )
 
-    val response = new DisableKeycloakUsersLambda().handleRequest(scheduleEvent, null)
+    val response = new InactiveKeycloakUsersLambda().handleRequest(scheduleEvent, null)
     response shouldBe LambdaResponse(isSuccess = true, "Users disabled successfully: ")
   }
 }

@@ -8,11 +8,12 @@ import io.circe.generic.semiauto._
 import org.keycloak.admin.client.Keycloak
 import org.slf4j.Logger
 import org.slf4j.simple.SimpleLoggerFactory
+import uk.gov.nationalarchives.keycloak.users.Config.Auth
 
 import java.time.{Instant, LocalDateTime, ZoneId, ZonedDateTime}
 import scala.jdk.CollectionConverters._
 
-object DisableKeycloakUsers {
+object InactiveKeycloakUsersUtils {
   implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   implicit val inactiveUserEncoder: Encoder[User] = deriveEncoder
 
@@ -23,14 +24,14 @@ object DisableKeycloakUsers {
     LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toString
   }
 
-  def findUsersCreatedBeforePeriod(keycloak: Keycloak, userType: String, periodMonths: Int): List[User] = {
-    val realmResource = keycloak.realm("tdr")
+  def findUsersCreatedBeforePeriod(keycloak: Keycloak, authConf: Auth, userType: String, periodDays: Int): List[User] = {
+    val realmResource = keycloak.realm(authConf.realm)
     val usersResource = realmResource.users()
 
     val users = usersResource.list().asScala.toList
 
     val cutoffTime = LocalDateTime.now()
-      .minusMonths(periodMonths)
+      .minusDays(periodDays)
       .atZone(ZoneId.systemDefault())
       .toInstant
       .toEpochMilli
@@ -46,51 +47,45 @@ object DisableKeycloakUsers {
         val createdTimeStamp = user.getCreatedTimestamp
         if (createdTimeStamp < cutoffTime) {
           Some(User(
-            id = user.getId,
-            username = user.getUsername,
-            email = Option(user.getEmail),
-            firstName = Option(user.getFirstName),
-            lastName = Option(user.getLastName),
-            createdTimestamp = Option(formatDate(user.getCreatedTimestamp)),
-            group = Option(userGroups.toList)
+            id = user.getId
           ))
         } else None
       }
     }
   }
 
-  def isOlderThanGivenPeriodDays(consignment: UserAndConsignmentInfo, period: Int): Boolean = {
-    consignment.latestDatetime.isBefore(ZonedDateTime.now().minusDays(period))
+  def userActivityOlderThanPeriod(userActivity: UserActivity, periodDays: Int): Boolean = {
+    userActivity.latestDatetime.isBefore(ZonedDateTime.now().minusDays(periodDays))
   }
 
   def disableInactiveUsers(
                             keycloak: Keycloak,
-                            inactiveUsers: List[UserAndConsignmentInfo],
-                            shouldDisable: (UserAndConsignmentInfo, Int) => Boolean,
+                            inactiveUsers: List[UserActivity],
+                            shouldDisable: (UserActivity, Int) => Boolean,
                             inactivityPeriod: Int
-                          ): IO[List[UserAndConsignmentInfo]] = {
+                          ): IO[List[UserActivity]] = {
     val realmResource = keycloak.realm("tdr")
     val usersResources = realmResource.users()
 
     inactiveUsers.filter(consignmentInfo => shouldDisable(consignmentInfo, inactivityPeriod)).traverse { user =>
       IO {
-        val userResource = usersResources.get(user.userid)
+        val userResource = usersResources.get(user.userId)
         val userRep = userResource.toRepresentation()
 
         userRep.setEnabled(false)
 
         userResource.update(userRep)
 
-        logger.info(s"Successfully disabled user ${user.username}")
+        logger.info(s"Successfully disabled user ${user.userId}")
         user.copy(isDisabled = true)
       }.handleError { e =>
-        logger.error(s"Failed to disable user ${user.username}: ${e.getMessage}")
+        logger.error(s"Failed to disable user ${user.userId}: ${e.getMessage}")
         user
       }
     }
   }
 
-  def fetchLatestConsignment(user: User, consignments: IO[gcs.Consignments]): IO[Option[UserAndConsignmentInfo]] = {
+  def fetchLatestConsignment(user: User, consignments: IO[gcs.Consignments]): IO[Option[UserActivity]] = {
     consignments.map { consignment =>
       consignment.edges
         .getOrElse(Nil) // List[Option[Edges]]
@@ -103,33 +98,19 @@ object DisableKeycloakUsers {
             case (Some(c), Some(e)) => if (c.isAfter(e)) c else e
             case (Some(c), None) => c
           }
-          UserAndConsignmentInfo(
+          UserActivity(
             user.id,
-            user.username,
-            node.consignmentReference,
-            node.consignmentType.get,
             latestDate
           )
         }.sortBy(_.latestDatetime)(Ordering[ZonedDateTime].reverse).headOption
     }
   }
 
-  case class User(
-                   id: String,
-                   username: String,
-                   email: Option[String],
-                   firstName: Option[String],
-                   lastName: Option[String],
-                   createdTimestamp: Option[String],
-                   group: Option[List[String]]
-                 )
+  case class User(id: String)
 
-  case class UserAndConsignmentInfo(
-                                     userid: String,
-                                     username: String,
-                                     consignmentReference: String,
-                                     consignmentType: String,
-                                     latestDatetime: ZonedDateTime,
-                                     isDisabled: Boolean = false
-                                   )
+  case class UserActivity(
+                           userId: String,
+                           latestDatetime: ZonedDateTime,
+                           isDisabled: Boolean = false
+                         )
 }

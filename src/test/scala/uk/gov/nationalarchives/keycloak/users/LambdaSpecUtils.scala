@@ -58,12 +58,10 @@ class LambdaSpecUtils(wiremockAuthServer: WireMockServer, wiremockSsmServer: Wir
     wiremockAuthServer.stubFor(put(urlEqualTo(s"$baseAdminUrl/$userId/execute-actions-email")).willReturn(status(200)))
   }
 
-  def mockAuthServerUserResponse(): Unit = {
+  def mockAuthServerUserResponse(userId: String = UUID.randomUUID().toString): Unit = {
     wiremockAuthServer.stubFor(post(urlEqualTo("/auth/realms/tdr/protocol/openid-connect/token"))
       .willReturn(okJson("{\"access_token\": \"abcde\"}"))
     )
-
-    val userId = UUID.randomUUID().toString
 
     wiremockAuthServer.stubFor(
       get(urlEqualTo("/auth/admin/realms/tdr/users"))
