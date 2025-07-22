@@ -151,12 +151,6 @@ class LambdaSpecUtils(wiremockAuthServer: WireMockServer, wiremockSsmServer: Wir
     )
   }
 
-  def fetchUserCalls: List[ServeEvent] = {
-    wiremockAuthServer.getAllServeEvents.asScala
-      .filter(s => s.getRequest.getUrl == baseAdminUrl && s.getRequest.getMethod == RequestMethod.GET)
-      .toList
-  }
-
   def userCreateCalls: List[ServeEvent] = {
     wiremockAuthServer.getAllServeEvents.asScala
       .filter(s => s.getRequest.getUrl == baseAdminUrl && s.getRequest.getMethod == RequestMethod.POST)
