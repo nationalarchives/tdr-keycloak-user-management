@@ -10,7 +10,7 @@ import org.slf4j.Logger
 import org.slf4j.simple.SimpleLoggerFactory
 import uk.gov.nationalarchives.keycloak.users.Config.Auth
 
-import java.time.{Instant, LocalDateTime, ZoneId, ZonedDateTime}
+import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
 import scala.jdk.CollectionConverters._
 
 object InactiveKeycloakUsersUtils {
@@ -18,11 +18,6 @@ object InactiveKeycloakUsersUtils {
   implicit val inactiveUserEncoder: Encoder[User] = deriveEncoder
 
   val logger: Logger = new SimpleLoggerFactory().getLogger(this.getClass.getName)
-
-  private def formatDate(timestamp: Long): String = {
-    val instant = Instant.ofEpochMilli(timestamp)
-    LocalDateTime.ofInstant(instant, ZoneId.systemDefault()).toString
-  }
 
   def findUsersCreatedBeforePeriod(keycloak: Keycloak, authConf: Auth, userType: String, periodDays: Int): List[User] = {
     val realmResource = keycloak.realm(authConf.realm)
@@ -55,16 +50,17 @@ object InactiveKeycloakUsersUtils {
   }
 
   def userActivityOlderThanPeriod(userActivity: UserActivity, periodDays: Int): Boolean = {
-    userActivity.latestDatetime.isBefore(ZonedDateTime.now().minusDays(periodDays))
+    userActivity.lastestActivityDatetime.isBefore(ZonedDateTime.now().minusDays(periodDays))
   }
 
   def disableInactiveUsers(
                             keycloak: Keycloak,
+                            authConf: Auth,
                             inactiveUsers: List[UserActivity],
                             shouldDisable: (UserActivity, Int) => Boolean,
                             inactivityPeriod: Int
                           ): IO[List[UserActivity]] = {
-    val realmResource = keycloak.realm("tdr")
+    val realmResource = keycloak.realm(authConf.realm)
     val usersResources = realmResource.users()
 
     inactiveUsers.filter(consignmentInfo => shouldDisable(consignmentInfo, inactivityPeriod)).traverse { user =>
@@ -85,11 +81,11 @@ object InactiveKeycloakUsersUtils {
     }
   }
 
-  def fetchLatestConsignment(user: User, consignments: IO[gcs.Consignments]): IO[Option[UserActivity]] = {
+  def fetchLatestUserActivity(user: User, consignments: IO[gcs.Consignments]): IO[Option[UserActivity]] = {
     consignments.map { consignment =>
       consignment.edges
-        .getOrElse(Nil) // List[Option[Edges]]
-        .flatMap(_.toList) // List[Edges]
+        .getOrElse(Nil)
+        .flatMap(_.toList)
         .map(_.node)
         .map { node =>
           val created = node.createdDatetime
@@ -102,7 +98,7 @@ object InactiveKeycloakUsersUtils {
             user.id,
             latestDate
           )
-        }.sortBy(_.latestDatetime)(Ordering[ZonedDateTime].reverse).headOption
+        }.sortBy(_.lastestActivityDatetime)(Ordering[ZonedDateTime].reverse).headOption
     }
   }
 
@@ -110,7 +106,7 @@ object InactiveKeycloakUsersUtils {
 
   case class UserActivity(
                            userId: String,
-                           latestDatetime: ZonedDateTime,
+                           lastestActivityDatetime: ZonedDateTime,
                            isDisabled: Boolean = false
                          )
 }

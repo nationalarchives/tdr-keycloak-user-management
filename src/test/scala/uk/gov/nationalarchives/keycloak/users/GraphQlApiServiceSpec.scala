@@ -51,7 +51,7 @@ class GraphQlApiServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
   }
 
   "getConsignments" should "throw an exception when a call to the api fails" in {
-    val graphQlError = GraphQLClient.Error("Unable to get fetch consignments", Nil, Nil, Some(Extensions(Some("NOT_AUTHORISED"))))
+    val graphQlError = GraphQLClient.Error("Unable to get consignments", Nil, Nil, Some(Extensions(Some("NOT_AUTHORISED"))))
     val token = new BearerAccessToken("token")
     when(keycloakUtils.serviceAccountToken[Identity](any[String], any[String])(any[SttpBackend[Identity, Any]], any[ClassTag[Identity[_]]], any[TdrKeycloakDeployment]))
       .thenReturn(Future.successful(token))
@@ -62,6 +62,6 @@ class GraphQlApiServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     val exception = intercept[RuntimeException] {
       service.getConsignments(config, userId).unsafeRunSync()
     }
-    exception.getMessage should equal(s"Unable to get fetch consignments")
+    exception.getMessage should equal(s"Unable to get consignments")
   }
 }

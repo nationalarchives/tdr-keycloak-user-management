@@ -49,9 +49,9 @@ class InactiveKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaR
           config = reportingConf,
           userId = UUID.fromString(user.id)
         )
-        InactiveKeycloakUsersUtils.fetchLatestConsignment(user, consignments)
+        InactiveKeycloakUsersUtils.fetchLatestUserActivity(user, consignments)
       }
-      inactiveUsers <- InactiveKeycloakUsersUtils.disableInactiveUsers(keycloak, inactiveUsers = eligibleUsersActivity.flatten, InactiveKeycloakUsersUtils.userActivityOlderThanPeriod, payload.inactivityPeriodDays)
+      inactiveUsers <- InactiveKeycloakUsersUtils.disableInactiveUsers(keycloak, authConf, inactiveUsers = eligibleUsersActivity.flatten, InactiveKeycloakUsersUtils.userActivityOlderThanPeriod, payload.inactivityPeriodDays)
       _ = keycloak.close()
     } yield LambdaResponse(isSuccess = true, "Users disabled successfully: " + inactiveUsers.filter(_.isDisabled).map(_.userId).mkString(", "))
 
