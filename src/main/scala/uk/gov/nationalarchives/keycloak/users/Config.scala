@@ -42,7 +42,8 @@ object Config {
   })
 
   def reportingFromConfig(): IO[Reporting] = ConfigSource.default.loadF[IO, Configuration].map(config => {
-    Reporting(url = config.reporting.url,
+    val kmsUtils = KMSUtils(kms(config.kms.endpoint), Map("LambdaFunctionName" -> config.function.name))
+    Reporting(url = kmsUtils.decryptValue(config.reporting.url),
       client = config.reporting.client,
       secret = getClientSecret(config.reporting.secretPath, config.ssm.endpoint),
       config.reporting.secretPath,
