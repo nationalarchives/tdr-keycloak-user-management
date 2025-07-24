@@ -2,7 +2,7 @@ package uk.gov.nationalarchives.keycloak.users
 
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent.RequestContext
 import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent.RequestContext.Http
-import com.amazonaws.services.lambda.runtime.events.APIGatewayV2HTTPEvent
+import com.amazonaws.services.lambda.runtime.events.{APIGatewayV2HTTPEvent, ScheduledEvent}
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification
 import com.amazonaws.services.lambda.runtime.events.models.s3.S3EventNotification.{S3BucketEntity, S3Entity, S3EventNotificationRecord, S3ObjectEntity}
 
@@ -12,6 +12,7 @@ object LambdaRunner extends App {
 
   sendCsvLambdaRequest()
   sendApiLambdaRequest()
+  sendDisableKeycloakUserRequest()
 
   def sendCsvLambdaRequest() = {
     // You will need to run this with credentials which have access to this bucket in the sandbox account
@@ -42,5 +43,17 @@ object LambdaRunner extends App {
     requestContext.setHttp(http)
     event.setRequestContext(requestContext)
     new ApiLambda().handleRequest(event, null)
+  }
+
+  def sendDisableKeycloakUserRequest(): Unit = {
+    val scheduleEvent = new ScheduledEvent()
+    val eventDetailsScala: Map[String, Any] = Map(
+      "userType" -> "judgment_user",
+      "inactivityPeriodDays" -> 180
+    )
+    val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
+
+    scheduleEvent.setDetail(eventDetailsJava)
+    new InactiveKeycloakUsersLambda().handleRequest(scheduleEvent, null)
   }
 }

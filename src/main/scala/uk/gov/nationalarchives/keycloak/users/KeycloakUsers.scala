@@ -14,7 +14,7 @@ object KeycloakUsers {
 
   val logger: Logger = new SimpleLoggerFactory().getLogger(this.getClass.getName)
 
-  private def keyCloakAdminClient(auth: Auth): Keycloak = KeycloakBuilder.builder()
+  def keyCloakAdminClient(auth: Auth): Keycloak = KeycloakBuilder.builder()
     .serverUrl(auth.url)
     .realm("tdr")
     .clientId(auth.client)

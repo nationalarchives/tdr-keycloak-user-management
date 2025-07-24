@@ -3,6 +3,7 @@ import sbt._
 object Dependencies {
   private val awsUtilsVersion = "0.1.285"
   private val keycloakVersion = "26.3.1"
+  private val circeVersion = "0.14.14"
 
   lazy val kmsUtils =  "uk.gov.nationalarchives" %% "kms-utils" % awsUtilsVersion
   lazy val s3Utils =  "uk.gov.nationalarchives" %% "s3-utils" % awsUtilsVersion
@@ -19,4 +20,10 @@ object Dependencies {
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19"
   lazy val slf4j = "org.slf4j" % "slf4j-simple" % "2.0.17"
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
+  lazy val circe = "io.circe" %% "circe-generic" % circeVersion
+  lazy val circeParser = "io.circe" %% "circe-parser" % circeVersion
+  lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.249"
+  lazy val generatedGraphql = "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.422"
+  lazy val graphqlClient = "uk.gov.nationalarchives" %% "tdr-graphql-client" % "0.0.240"
+  lazy val mockito = "org.mockito" %% "mockito-scala" % "2.0.0"
 }

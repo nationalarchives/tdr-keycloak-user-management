@@ -1,6 +1,7 @@
 package uk.gov.nationalarchives.keycloak.users
 
 import cats.effect.IO
+import com.typesafe.config.{ConfigFactory, Config => TypeSafeConfig}
 import pureconfig.ConfigSource
 import pureconfig.generic.auto._
 import pureconfig.module.catseffect.syntax._
@@ -13,6 +14,13 @@ import uk.gov.nationalarchives.aws.utils.kms.KMSUtils
 import java.net.URI
 
 object Config {
+
+  private val configFactory: TypeSafeConfig = ConfigFactory.load
+  val authUrl: String = {
+    val kmsUtils = KMSUtils(kms(configFactory.getString("kms.endpoint")), Map("LambdaFunctionName" -> configFactory.getString("function.name")))
+    kmsUtils.decryptValue(configFactory.getString("auth.url"))
+  }
+  val apiUrl: String = configFactory.getString("consignment-api.url")
 
   def getClientSecret(secretPath: String, endpoint: String): String = {
     val ssmClient: SsmClient = SsmClient.builder()
@@ -33,9 +41,19 @@ object Config {
     )
   })
 
+  def reportingFromConfig(): IO[Reporting] = ConfigSource.default.loadF[IO, Configuration].map(config => {
+    Reporting(url = config.reporting.url,
+      client = config.reporting.client,
+      secret = getClientSecret(config.reporting.secretPath, config.ssm.endpoint),
+      config.reporting.secretPath,
+      realm = config.reporting.realm
+    )
+  })
+
   case class LambdaFunction(name: String)
   case class Kms(endpoint: String)
   case class Ssm(endpoint: String)
   case class Auth(url: String, secret: String, secretPath: String, client: String, realm: String)
-  case class Configuration(auth: Auth, function: LambdaFunction, kms: Kms, ssm: Ssm)
+  case class Configuration(auth: Auth, reporting: Reporting, function: LambdaFunction, kms: Kms, ssm: Ssm)
+  case class Reporting(url: String, client: String, secret: String, secretPath: String, realm: String)
 }
