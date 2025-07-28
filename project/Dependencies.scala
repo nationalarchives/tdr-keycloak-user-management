@@ -1,7 +1,7 @@
 import sbt._
 
 object Dependencies {
-  private val awsUtilsVersion = "0.1.285"
+  private val awsUtilsVersion = "0.1.286"
   private val keycloakVersion = "26.3.1"
   private val circeVersion = "0.14.14"
 
@@ -9,7 +9,7 @@ object Dependencies {
   lazy val s3Utils =  "uk.gov.nationalarchives" %% "s3-utils" % awsUtilsVersion
   lazy val decoderUtils =  "uk.gov.nationalarchives" %% "decoders-utils" % awsUtilsVersion
   lazy val awsSsm = "software.amazon.awssdk" % "ssm" % "2.26.27"
-  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.6.2"
+  lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.6.3"
   lazy val lambdaCore = "com.amazonaws" % "aws-lambda-java-core" % "1.2.1"
   lazy val csvParser =  "io.github.zamblauskas" %% "scala-csv-parser" % "0.13.1"
   lazy val circeExtras =  "io.circe" %% "circe-generic-extras" % "0.14.4"
