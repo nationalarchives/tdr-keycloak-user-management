@@ -41,7 +41,7 @@ jobs:
           aws lambda update-function-code --function-name tdr-create-keycloak-user-api-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-code-mgmt --s3-key keycloak-user-management/${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
           aws lambda update-function-code --function-name tdr-inactive-keycloak-users-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-code-mgmt --s3-key keycloak-user-management/${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
       - name: Send service updated message
-        uses: slackapi/slack-github-action@v91efab103c0de0a537f72a35f6b8cda0ee76bf0a
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a
         with:
           payload: |
             {
