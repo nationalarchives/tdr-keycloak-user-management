@@ -20,7 +20,7 @@ jobs:
       - uses: sbt/setup-sbt@234370af1319038bf8dc432f8a7e4b83078a1781
       - uses: coursier/cache-action@4e2615869d13561d626ed48655e1a39e5b192b3c
       - name: Configure AWS credentials from management account
-        uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df
+        uses: aws-actions/configure-aws-credentials@59b441846ad109fa4a1549b73ef4e149c4bfb53b
         with:
           role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
           aws-region: eu-west-2
