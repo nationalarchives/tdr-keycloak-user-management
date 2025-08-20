@@ -19,7 +19,7 @@ import scala.jdk.CollectionConverters._
 class InactiveKeycloakUsersUtilsSpec extends AnyFlatSpec with MockitoSugar with Matchers {
 
   val testRealm = "test-realm"
-  val authConfig: Config.Auth = Config.Auth(url = "testUrl.com", secret = "secret", secretPath = "secretPath", client = "client", realm = testRealm)
+  val authConfig: Config.Auth = Config.Auth(url = "testUrl.com", secretPath = "secretPath", client = "client", realm = testRealm)
   val userId = "test-user-id"
 
   "findUsersCreatedBeforePeriod" should "return users created before the cutoff time" in {
