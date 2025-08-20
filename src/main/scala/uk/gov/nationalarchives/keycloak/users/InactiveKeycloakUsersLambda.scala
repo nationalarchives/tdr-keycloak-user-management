@@ -11,7 +11,7 @@ import io.circe.parser._
 import org.slf4j.Logger
 import org.slf4j.simple.SimpleLoggerFactory
 import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, SttpBackendOptions}
-import uk.gov.nationalarchives.keycloak.users.Config.{reportingFromConfig, authFromConfig}
+import uk.gov.nationalarchives.keycloak.users.Config.{authFromConfig, disableUsersFromConfig, reportingFromConfig}
 import uk.gov.nationalarchives.keycloak.users.InactiveKeycloakUsersLambda.{EventInput, LambdaResponse}
 import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment}
@@ -51,7 +51,9 @@ class InactiveKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaR
         )
         InactiveKeycloakUsersUtils.fetchLatestUserActivity(user, consignments)
       }
-      inactiveUsers <- InactiveKeycloakUsersUtils.disableInactiveUsers(keycloak, authConf, inactiveUsers = eligibleUsersActivity.flatten, InactiveKeycloakUsersUtils.userActivityOlderThanPeriod, payload.inactivityPeriodDays)
+      disableUsers <- disableUsersFromConfig()
+      inactiveUsers <- InactiveKeycloakUsersUtils.disableInactiveUsers(
+        keycloak, authConf, inactiveUsers = eligibleUsersActivity.flatten, InactiveKeycloakUsersUtils.userActivityOlderThanPeriod, payload.inactivityPeriodDays, disableUsers.dryRun)
       _ = keycloak.close()
     } yield LambdaResponse(isSuccess = true, "Users disabled successfully: " + inactiveUsers.filter(_.isDisabled).map(_.userId).mkString(", "))
 

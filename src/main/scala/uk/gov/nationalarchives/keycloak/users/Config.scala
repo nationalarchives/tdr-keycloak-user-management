@@ -51,10 +51,15 @@ object Config {
     )
   })
 
+  def disableUsersFromConfig(): IO[DisableUsers] = ConfigSource.default.loadF[IO, Configuration].map(config => {
+    DisableUsers(config.disableUsers.dryRun)
+  })
+
+  case class DisableUsers(dryRun: Boolean)
   case class LambdaFunction(name: String)
   case class Kms(endpoint: String)
   case class Ssm(endpoint: String)
   case class Auth(url: String, secret: String, secretPath: String, client: String, realm: String)
-  case class Configuration(auth: Auth, reporting: Reporting, function: LambdaFunction, kms: Kms, ssm: Ssm)
+  case class Configuration(auth: Auth, reporting: Reporting, function: LambdaFunction, kms: Kms, ssm: Ssm, disableUsers: DisableUsers)
   case class Reporting(url: String, client: String, secret: String, secretPath: String, realm: String)
 }

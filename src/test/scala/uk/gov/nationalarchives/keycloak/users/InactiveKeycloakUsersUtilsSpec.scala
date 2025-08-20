@@ -80,7 +80,8 @@ class InactiveKeycloakUsersUtilsSpec extends AnyFlatSpec with MockitoSugar with 
       authConfig,
       List(user),
       (_, _) => true,
-      30
+      30,
+      dryRun = false
     ).unsafeRunSync()
 
     verify(userRep).setEnabled(false)

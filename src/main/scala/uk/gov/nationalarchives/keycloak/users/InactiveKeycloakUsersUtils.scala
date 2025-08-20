@@ -58,7 +58,8 @@ object InactiveKeycloakUsersUtils {
                             authConf: Auth,
                             inactiveUsers: List[UserActivity],
                             shouldDisable: (UserActivity, Int) => Boolean,
-                            inactivityPeriod: Int
+                            inactivityPeriod: Int,
+                            dryRun: Boolean
                           ): IO[List[UserActivity]] = {
     val realmResource = keycloak.realm(authConf.realm)
     val usersResources = realmResource.users()
@@ -68,9 +69,10 @@ object InactiveKeycloakUsersUtils {
         val userResource = usersResources.get(user.userId)
         val userRep = userResource.toRepresentation()
 
-        userRep.setEnabled(false)
-
-        userResource.update(userRep)
+        if (dryRun) {} else {
+          userRep.setEnabled(false)
+          userResource.update(userRep)
+        }
 
         logger.info(s"Successfully disabled user ${user.userId}")
         user.copy(isDisabled = true)
