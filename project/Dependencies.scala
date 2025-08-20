@@ -22,7 +22,7 @@ object Dependencies {
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
   lazy val circe = "io.circe" %% "circe-generic" % circeVersion
   lazy val circeParser = "io.circe" %% "circe-parser" % circeVersion
-  lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.252"
+  lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.253"
   lazy val generatedGraphql = "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.423"
   lazy val graphqlClient = "uk.gov.nationalarchives" %% "tdr-graphql-client" % "0.0.246"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "2.0.0"
