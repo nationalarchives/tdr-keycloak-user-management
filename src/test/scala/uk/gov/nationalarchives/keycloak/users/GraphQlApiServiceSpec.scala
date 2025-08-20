@@ -46,7 +46,7 @@ class GraphQlApiServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
     when(graphQlClient.getResult(any[BearerAccessToken], any[Document], any[Option[gcs.Variables]])(any[SttpBackend[Identity, Any]], any[ClassTag[Identity[_]]]))
       .thenReturn(Future.successful(GraphQlResponse[gcs.Data](Option(data), Nil)))
 
-    val result = service.getConsignments(config, userId).unsafeRunSync()
+    val result = service.getConsignments(config, userId, "clientSecret").unsafeRunSync()
     result shouldBe consignments
   }
 
@@ -60,7 +60,7 @@ class GraphQlApiServiceSpec extends AnyFlatSpec with MockitoSugar with Matchers 
       .thenReturn(Future.successful(GraphQlResponse[gcs.Data](None, List(GraphQlError(graphQlError)))))
 
     val exception = intercept[RuntimeException] {
-      service.getConsignments(config, userId).unsafeRunSync()
+      service.getConsignments(config, userId, "clientSecret").unsafeRunSync()
     }
     exception.getMessage should equal(s"Unable to get consignments")
   }
