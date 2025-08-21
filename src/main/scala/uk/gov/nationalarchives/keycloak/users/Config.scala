@@ -22,9 +22,10 @@ object Config {
   }
   val apiUrl: String = configFactory.getString("consignment-api.url")
 
-  def getClientSecret(secretPath: String, endpoint: String): String = {
+  def getClientSecret(secretPath: String): String = {
+    val ssmEndpoint = configFactory.getString("ssm.endpoint")
     val ssmClient: SsmClient = SsmClient.builder()
-      .endpointOverride(URI.create(endpoint))
+      .endpointOverride(URI.create(ssmEndpoint))
       .region(Region.EU_WEST_2)
       .build()
     val getParameterRequest = GetParameterRequest.builder.name(secretPath).withDecryption(true).build
@@ -34,7 +35,6 @@ object Config {
   def authFromConfig(): IO[Auth] = ConfigSource.default.loadF[IO, Configuration].map(config => {
     val kmsUtils = KMSUtils(kms(config.kms.endpoint), Map("LambdaFunctionName" -> config.function.name))
     Auth(kmsUtils.decryptValue(config.auth.url),
-      secret = getClientSecret(config.auth.secretPath, config.ssm.endpoint),
       config.auth.secretPath,
       client = config.auth.client,
       realm = config.auth.realm
@@ -45,7 +45,6 @@ object Config {
     val kmsUtils = KMSUtils(kms(config.kms.endpoint), Map("LambdaFunctionName" -> config.function.name))
     Reporting(url = kmsUtils.decryptValue(config.reporting.url),
       client = config.reporting.client,
-      secret = getClientSecret(config.reporting.secretPath, config.ssm.endpoint),
       config.reporting.secretPath,
       realm = config.reporting.realm
     )
@@ -54,7 +53,7 @@ object Config {
   case class LambdaFunction(name: String)
   case class Kms(endpoint: String)
   case class Ssm(endpoint: String)
-  case class Auth(url: String, secret: String, secretPath: String, client: String, realm: String)
+  case class Auth(url: String, secretPath: String, client: String, realm: String)
   case class Configuration(auth: Auth, reporting: Reporting, function: LambdaFunction, kms: Kms, ssm: Ssm)
-  case class Reporting(url: String, client: String, secret: String, secretPath: String, realm: String)
+  case class Reporting(url: String, client: String, secretPath: String, realm: String)
 }
