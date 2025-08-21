@@ -21,8 +21,8 @@ class GraphQlApiService(keycloak: KeycloakUtils, getConsignmentsClient: GraphQLC
   implicit val addOrUpdateBulkFileMetadataInputDecoder: Decoder[ConsignmentFilters] = deriveDecoder
   implicit val gcsVariablesDecoder: Decoder[gcs.Variables] = deriveDecoder
 
-  def getConsignments(config: Reporting, userId: UUID): IO[gcs.Consignments] = for {
-    token <- keycloak.serviceAccountToken(config.client, config.secret).toIO
+  def getConsignments(config: Reporting, userId: UUID, clientSecret: String): IO[gcs.Consignments] = for {
+    token <- keycloak.serviceAccountToken(config.client, clientSecret).toIO
     result <- getConsignmentsClient.getResult(token, gcs.document, Some(gcs.Variables(limit = 1, None, currentPage = Some(0), consignmentFiltersInput = Some(ConsignmentFilters(Some(userId), consignmentType = None))))).toIO
     data <- IO.fromOption(result.data)(new RuntimeException(result.errors.headOption.get.message))
   } yield data.consignments

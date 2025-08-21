@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.keycloak.users
 
+import jakarta.ws.rs.core.Response
 import org.keycloak.OAuth2Constants
 import org.keycloak.admin.client.{Keycloak, KeycloakBuilder}
 import org.keycloak.representations.idm.{CredentialRepresentation, UserRepresentation}
@@ -7,20 +8,21 @@ import org.slf4j.Logger
 import org.slf4j.simple.SimpleLoggerFactory
 import uk.gov.nationalarchives.keycloak.users.Config.Auth
 
-import jakarta.ws.rs.core.Response
 import scala.jdk.CollectionConverters._
 
 object KeycloakUsers {
 
   val logger: Logger = new SimpleLoggerFactory().getLogger(this.getClass.getName)
 
-  def keyCloakAdminClient(auth: Auth): Keycloak = KeycloakBuilder.builder()
+  def keyCloakAdminClient(auth: Auth): Keycloak = {
+    val clientSecret = Config.getClientSecret(auth.secretPath)
+    KeycloakBuilder.builder()
     .serverUrl(auth.url)
     .realm("tdr")
     .clientId(auth.client)
-    .clientSecret(auth.secret)
+    .clientSecret(clientSecret)
     .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
-    .build()
+    .build()}
 
   def deleteUser(auth: Auth, userId: String): String = {
     val client = keyCloakAdminClient(auth)
@@ -33,7 +35,7 @@ object KeycloakUsers {
 
   def createUsers(auth: Auth, userCredentials: List[UserCredentials]): String = {
     val client = keyCloakAdminClient(auth)
-    def createUser(userCredentials: UserCredentials) = {
+    def createUser(userCredentials: UserCredentials): String = {
       val realm = client.realm(auth.realm)
       val user = realm.users()
       val userRepresentation: UserRepresentation = new UserRepresentation
