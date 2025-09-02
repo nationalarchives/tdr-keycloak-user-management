@@ -44,7 +44,6 @@ class InactiveKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Moc
   }
   
   override def beforeEach(): Unit = wiremockSnsServer.resetRequests()
-
   
   "handleRequest" should "successfully disable inactive users" in {
     val scheduleEvent = new ScheduledEvent()
