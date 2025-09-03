@@ -90,7 +90,7 @@ class InactiveKeycloakUsersUtilsSpec extends AnyFlatSpec with MockitoSugar with 
     result should contain only updatedUser
   }
 
-  "disableInactiveUsers" should "disable users based on the predicate when dry run is enabled" in {
+  "disableInactiveUsers" should "not disable users when dry run is enabled" in {
     val keycloak = mock[Keycloak]
     val realmResource = mock[RealmResource]
     val usersResource = mock[UsersResource]
