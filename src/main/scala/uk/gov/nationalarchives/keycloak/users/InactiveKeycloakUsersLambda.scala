@@ -11,8 +11,8 @@ import io.circe.parser._
 import org.slf4j.Logger
 import org.slf4j.simple.SimpleLoggerFactory
 import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, SttpBackendOptions}
-import uk.gov.nationalarchives.keycloak.users.Config.{authFromConfig, disableUsersFromConfig, getClientSecret, reportingFromConfig}
-import uk.gov.nationalarchives.keycloak.users.InactiveKeycloakUsersLambda.{EventInput, LambdaResponse}
+import uk.gov.nationalarchives.keycloak.users.Config.{authFromConfig, disableUsersFromConfig, environmentFromConfig, getClientSecret, reportingFromConfig, snsFromConfig}
+import uk.gov.nationalarchives.keycloak.users.InactiveKeycloakUsersLambda.{EventInput, LambdaResponse, LogInfo}
 import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment}
 
@@ -41,7 +41,10 @@ class InactiveKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaR
       _ <- IO(logger.info(s"[INFO] Processing user type: ${payload.userType}, inactivity period: ${payload.inactivityPeriodDays} days\n"))
       authConf <- authFromConfig()
       reportingConf <- reportingFromConfig()
+      snsConf <- snsFromConfig()
+      environment <- environmentFromConfig()
       keycloak = KeycloakUsers.keyCloakAdminClient(authConf)
+      notificationUtils = NotificationUtils.apply(snsConf, environment)
       eligibleUsers = InactiveKeycloakUsersUtils.findUsersCreatedBeforePeriod(keycloak, authConf, payload.userType, periodDays = payload.inactivityPeriodDays)
       _ <- IO(logger.info(s"Found ${eligibleUsers.length} ${payload.userType} users created over ${payload.inactivityPeriodDays} days ago"))
       clientSecret = getClientSecret(reportingConf.secretPath)
@@ -56,6 +59,7 @@ class InactiveKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaR
       disableUsers <- disableUsersFromConfig()
       inactiveUsers <- InactiveKeycloakUsersUtils.disableInactiveUsers(
         keycloak, authConf, inactiveUsers = eligibleUsersActivity.flatten, InactiveKeycloakUsersUtils.userActivityOlderThanPeriod, payload.inactivityPeriodDays, disableUsers.dryRun)
+      _ <- IO(notificationUtils.publishUsersDisabledEvent(inactiveUsers.count(_.isDisabled), LogInfo(context.getLogGroupName, context.getLogStreamName)))
       _ = keycloak.close()
     } yield LambdaResponse(isSuccess = true, "Users disabled successfully: " + inactiveUsers.filter(_.isDisabled).map(_.userId).mkString(", "))
 
@@ -72,4 +76,6 @@ object InactiveKeycloakUsersLambda {
   case class EventInput(userType: String, inactivityPeriodDays: Int)
 
   case class LambdaResponse(isSuccess: Boolean, message: String)
+  
+  case class LogInfo(logGroupName: String, logStreamName: String)
 }
