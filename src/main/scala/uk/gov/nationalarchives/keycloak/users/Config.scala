@@ -58,7 +58,7 @@ object Config {
     .map(config => Sns(config.sns.endpoint, config.sns.notificationsTopicArn))
 
   def environmentFromConfig(): IO[String] = ConfigSource.default.loadF[IO, Configuration].map(_.environment)
-  
+
   case class DisableUsers(dryRun: Boolean)
   case class LambdaFunction(name: String)
   case class Kms(endpoint: String)
