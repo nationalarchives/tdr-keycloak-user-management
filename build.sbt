@@ -13,6 +13,7 @@ lazy val root = (project in file("."))
       kmsUtils,
       decoderUtils,
       s3Utils,
+      snsUtils,
       catsEffect,
       keycloakCore,
       csvParser,
