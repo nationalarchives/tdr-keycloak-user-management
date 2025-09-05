@@ -9,7 +9,6 @@ import uk.gov.nationalarchives.keycloak.users.Config.Sns
 import uk.gov.nationalarchives.keycloak.users.InactiveKeycloakUsersLambda.LogInfo
 import uk.gov.nationalarchives.keycloak.users.NotificationUtils.UsersDisabledEvent
 
-
 class NotificationUtils(snsUtils: SNSUtils, snsConfig: Sns, environment: String) {
   def publishUsersDisabledEvent(count: Integer, logInfo: LogInfo): PublishResponse =
     snsUtils.publish(UsersDisabledEvent(environment, count, logInfo).asJson.toString(), snsConfig.notificationsTopicArn)

@@ -59,13 +59,15 @@ class InactiveKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaR
       disableUsers <- disableUsersFromConfig()
       inactiveUsers <- InactiveKeycloakUsersUtils.disableInactiveUsers(
         keycloak, authConf, inactiveUsers = eligibleUsersActivity.flatten, InactiveKeycloakUsersUtils.userActivityOlderThanPeriod, payload.inactivityPeriodDays, disableUsers.dryRun)
+      disableSuccessMessage = "Users disabled successfully: " + inactiveUsers.filter(_.isDisabled).map(_.userId).mkString(", ")
       _ <- IO(notificationUtils.publishUsersDisabledEvent(inactiveUsers.count(_.isDisabled), LogInfo(context.getLogGroupName, context.getLogStreamName)))
+        .adaptError(e => new RuntimeException(s"$disableSuccessMessage, but users disabled event publication failed with error ${e.getMessage}"))
       _ = keycloak.close()
-    } yield LambdaResponse(isSuccess = true, "Users disabled successfully: " + inactiveUsers.filter(_.isDisabled).map(_.userId).mkString(", "))
+    } yield LambdaResponse(isSuccess = true, disableSuccessMessage)
 
     program
       .handleErrorWith(error => {
-        logger.error(s"Unexpected error:${error.getMessage}")
+        logger.error(s"Unexpected error: ${error.getMessage}")
         IO.pure(LambdaResponse(isSuccess = false, error.getMessage))
       }).unsafeRunSync()
   }

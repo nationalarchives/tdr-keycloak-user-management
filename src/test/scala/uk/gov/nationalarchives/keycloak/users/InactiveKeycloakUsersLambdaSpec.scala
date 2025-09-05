@@ -107,10 +107,8 @@ class InactiveKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Moc
     val userId1 = UUID.randomUUID().toString
     val userId2 = UUID.randomUUID().toString
     val userId3 = UUID.randomUUID().toString
-    
     lambdaSpecUtils.mockAuthServerUserResponse(Seq(userId1, userId2, userId3))
     lambdaSpecUtils.mockGetConsignmentsResponse()
-    
     lambdaSpecUtils.setupSnsServer()
 
     val mockLogInfo = LogInfo("inactive-keycloak-users-log-group", "multi-users-invocation-stream")
@@ -130,6 +128,26 @@ class InactiveKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Moc
     decodedBody should include(s"\"logStreamName\" : \"${mockLogInfo.logStreamName}\"")
   }
 
+  "handleRequest" should "fail with error explaining partial failure when sns publish fails" in {
+    val scheduleEvent = new ScheduledEvent()
+    val eventDetailsScala: Map[String, Any] = Map(
+      "userType" -> "judgment_user",
+      "inactivityPeriodDays" -> 180
+    )
+    val eventDetailsJava: java.util.Map[String, AnyRef] = eventDetailsScala.asJava.asInstanceOf[java.util.Map[String, AnyRef]]
+
+    scheduleEvent.setDetail(eventDetailsJava)
+
+    val userId = UUID.randomUUID().toString
+    lambdaSpecUtils.mockAuthServerUserResponse(userId)
+    lambdaSpecUtils.mockGetConsignmentsResponse()
+    lambdaSpecUtils.setupSnsServer()
+    
+    val result: LambdaResponse = new InactiveKeycloakUsersLambda().handleRequest(scheduleEvent, null)
+    
+    result shouldBe LambdaResponse(isSuccess = false, s"""Users disabled successfully: $userId, but users disabled event publication failed with error Cannot invoke "com.amazonaws.services.lambda.runtime.Context.getLogGroupName()" because "context${"$"}1" is null""")
+  }
+  
   "handleRequest" should "fail if the scheduledEvent parameters contains invalid json" in {
     val scheduleEvent = new ScheduledEvent()
     val eventDetailsScala: Map[String, Any] = Map(
