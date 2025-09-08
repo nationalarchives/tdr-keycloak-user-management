@@ -1,6 +1,5 @@
 name: Tag and pre deploy
 on:
-  workflow_dispatch: 
   push:
     branches:
       - main
