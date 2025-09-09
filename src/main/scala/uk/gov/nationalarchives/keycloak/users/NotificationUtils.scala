@@ -10,11 +10,11 @@ import uk.gov.nationalarchives.keycloak.users.InactiveKeycloakUsersLambda.LogInf
 import uk.gov.nationalarchives.keycloak.users.NotificationUtils.UsersDisabledEvent
 
 class NotificationUtils(snsUtils: SNSUtils, snsConfig: Sns, environment: String) {
-  def publishUsersDisabledEvent(count: Integer, logInfo: LogInfo): PublishResponse =
-    snsUtils.publish(UsersDisabledEvent(environment, count, logInfo).asJson.toString(), snsConfig.notificationsTopicArn)
+  def publishUsersDisabledEvent(count: Integer, logInfo: LogInfo, dryRun: Boolean): PublishResponse =
+    snsUtils.publish(UsersDisabledEvent(environment, count, logInfo, dryRun).asJson.toString(), snsConfig.notificationsTopicArn)
 }
 
 object NotificationUtils {
   def apply(snsConfig: Sns, environment: String): NotificationUtils = new NotificationUtils(SNSUtils(sns(snsConfig.endpoint)), snsConfig, environment)
-  case class UsersDisabledEvent(environment: String, disabledUsersCount: Int, logInfo: LogInfo)
+  case class UsersDisabledEvent(environment: String, disabledUsersCount: Int, logInfo: LogInfo, dryRun: Boolean)
 }

@@ -60,7 +60,7 @@ class InactiveKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaR
       inactiveUsers <- InactiveKeycloakUsersUtils.disableInactiveUsers(
         keycloak, authConf, inactiveUsers = eligibleUsersActivity.flatten, InactiveKeycloakUsersUtils.userActivityOlderThanPeriod, payload.inactivityPeriodDays, disableUsers.dryRun)
       disableSuccessMessage = "Users disabled successfully: " + inactiveUsers.filter(_.isDisabled).map(_.userId).mkString(", ")
-      _ <- IO(notificationUtils.publishUsersDisabledEvent(inactiveUsers.count(_.isDisabled), LogInfo(context.getLogGroupName, context.getLogStreamName)))
+      _ <- IO(notificationUtils.publishUsersDisabledEvent(inactiveUsers.count(_.isDisabled), LogInfo(context.getLogGroupName, context.getLogStreamName), disableUsers.dryRun))
         .adaptError(e => new RuntimeException(s"$disableSuccessMessage, but users disabled event publication failed with error ${e.getMessage}"))
       _ = keycloak.close()
     } yield LambdaResponse(isSuccess = true, disableSuccessMessage)
