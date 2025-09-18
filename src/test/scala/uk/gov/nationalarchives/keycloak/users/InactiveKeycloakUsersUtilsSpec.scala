@@ -42,7 +42,7 @@ class InactiveKeycloakUsersUtilsSpec extends AnyFlatSpec with MockitoSugar with 
 
     when(keycloak.realm(testRealm)).thenReturn(realmResource)
     when(realmResource.users()).thenReturn(usersResource)
-    when(usersResource.list()).thenReturn(List(user).asJava)
+    when(usersResource.list(1, Int.MaxValue)).thenReturn(List(user).asJava)
     when(usersResource.get(userId)).thenReturn(userResource)
     when(userResource.groups()).thenReturn(List(group).asJava)
     when(userResource.toRepresentation()).thenReturn(user)
