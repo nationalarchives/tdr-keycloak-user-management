@@ -23,7 +23,7 @@ object InactiveKeycloakUsersUtils {
     val realmResource = keycloak.realm(authConf.realm)
     val usersResource = realmResource.users()
 
-    val users = usersResource.list().asScala.toList
+    val users = usersResource.list(1, Int.MaxValue).asScala.toList
 
     val cutoffTime = LocalDateTime.now()
       .minusDays(periodDays)

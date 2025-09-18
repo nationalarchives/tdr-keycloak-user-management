@@ -175,7 +175,7 @@ class InactiveKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Moc
 
     lambdaSpecUtils.mockAuthServerUserResponse()
     wiremockAuthServer.stubFor(
-      get(urlEqualTo("/auth/admin/realms/tdr/users"))
+      get(urlEqualTo(s"/auth/admin/realms/tdr/users?first=1&max=${Integer.MAX_VALUE}"))
         .willReturn(
           aResponse()
             .withStatus(500)
