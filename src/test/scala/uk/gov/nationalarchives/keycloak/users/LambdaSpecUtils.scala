@@ -1,5 +1,6 @@
 package uk.gov.nationalarchives.keycloak.users
 
+import com.amazonaws.services.lambda.runtime.Context
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock._
@@ -11,6 +12,8 @@ import com.github.tomakehurst.wiremock.stubbing.{ServeEvent, StubMapping}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.auto._
 import io.circe.parser.decode
+import org.mockito.MockitoSugar.mock
+import org.mockito.Mockito.when
 import uk.gov.nationalarchives.keycloak.users.LambdaSpecUtils.TestUserRequest
 
 import java.nio.ByteBuffer
@@ -18,7 +21,7 @@ import java.nio.charset.Charset
 import java.util.UUID
 import scala.jdk.CollectionConverters._
 
-class LambdaSpecUtils(wiremockAuthServer: WireMockServer, wiremockSsmServer: WireMockServer, wiremockGraphqlServer: Option[WireMockServer] = None) {
+class LambdaSpecUtils(wiremockAuthServer: WireMockServer, wiremockSsmServer: WireMockServer, wiremockGraphqlServer: Option[WireMockServer] = None, wiremockSnsServer: Option[WireMockServer] = None) {
   implicit val customConfig: Configuration = Configuration.default.withDefaults
 
   val baseAdminUrl = "/auth/admin/realms/tdr/users"
@@ -30,6 +33,9 @@ class LambdaSpecUtils(wiremockAuthServer: WireMockServer, wiremockSsmServer: Wir
       )
   }
 
+  def setupSnsServer(): Unit =
+    wiremockSnsServer.foreach(_.stubFor(post(urlEqualTo("/")).willReturn(aResponse().withStatus(200))))
+  
   val wiremockKmsEndpoint = new WireMockServer(new WireMockConfiguration().port(9004).extensions(new ResponseDefinitionTransformer {
     override def transform(request: Request, responseDefinition: ResponseDefinition, files: FileSource, parameters: Parameters): ResponseDefinition = {
       case class KMSRequest(CiphertextBlob: String)
@@ -58,40 +64,40 @@ class LambdaSpecUtils(wiremockAuthServer: WireMockServer, wiremockSsmServer: Wir
     wiremockAuthServer.stubFor(put(urlEqualTo(s"$baseAdminUrl/$userId/execute-actions-email")).willReturn(status(200)))
   }
 
-  def mockAuthServerUserResponse(userId: String = UUID.randomUUID().toString): Unit = {
+  def mockAuthServerUserResponse(userIds: Seq[String] = Seq(UUID.randomUUID().toString)): Unit = {
     wiremockAuthServer.stubFor(post(urlEqualTo("/auth/realms/tdr/protocol/openid-connect/token"))
       .willReturn(okJson("{\"access_token\": \"abcde\"}"))
     )
+    
+    val usersJsonArray = userIds.zipWithIndex.map { case (userId, index) =>
+      s"""
+    {
+      "id": "$userId",
+      "username": "testuser$index",
+      "email": "testuser$index@example.com",
+      "enabled": true
+    }"""
+    }.mkString(",")
 
     wiremockAuthServer.stubFor(
-      get(urlEqualTo("/auth/admin/realms/tdr/users"))
+      get(urlEqualTo(s"/auth/admin/realms/tdr/users?first=1&max=${Integer.MAX_VALUE}"))
         .willReturn(
           aResponse()
             .withStatus(200)
             .withHeader("Content-Type", "application/json")
-            .withBody(
-              s"""
-            [
-              {
-                "id": "$userId",
-                "username": "testuser",
-                "email": "testuser@example.com",
-                "enabled": true
-              }
-            ]
-          """.stripMargin
-            )
+            .withBody(s"[$usersJsonArray]")
         )
     )
 
-    wiremockAuthServer.stubFor(
-      get(urlEqualTo(s"/auth/admin/realms/tdr/users/$userId/groups"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              """
+    userIds.zipWithIndex.foreach { case (userId, index) =>
+      wiremockAuthServer.stubFor(
+        get(urlEqualTo(s"/auth/admin/realms/tdr/users/$userId/groups"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                """
             [
               {
                 "id": "group-id-1",
@@ -104,51 +110,57 @@ class LambdaSpecUtils(wiremockAuthServer: WireMockServer, wiremockSsmServer: Wir
                 "path": "/some-other-group"
               }
             ]
-          """.stripMargin
-            )
-        )
-    )
+            """.stripMargin
+              )
+          )
+      )
 
-    wiremockAuthServer.stubFor(
-      get(urlEqualTo(s"/auth/admin/realms/tdr/users/$userId"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              s"""
+      wiremockAuthServer.stubFor(
+        get(urlEqualTo(s"/auth/admin/realms/tdr/users/$userId"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                s"""
           {
             "id": "$userId",
-            "username": "testuser",
-            "email": "testuser@example.com",
+            "username": "testuser$index",
+            "email": "testuser$index@example.com",
             "enabled": true,
-            "firstName": "Test",
-            "lastName": "User"
+            "firstName": "Test$index",
+            "lastName": "User$index"
           }
           """.stripMargin
-            )
-        )
-    )
-    wiremockAuthServer.stubFor(
-      put(urlEqualTo(s"/auth/admin/realms/tdr/users/$userId"))
-        .willReturn(
-          aResponse()
-            .withStatus(200)
-            .withHeader("Content-Type", "application/json")
-            .withBody(
-              s"""
+              )
+          )
+      )
+
+      wiremockAuthServer.stubFor(
+        put(urlEqualTo(s"/auth/admin/realms/tdr/users/$userId"))
+          .willReturn(
+            aResponse()
+              .withStatus(200)
+              .withHeader("Content-Type", "application/json")
+              .withBody(
+                s"""
           {
             "id": "$userId",
-            "username": "testuser",
-            "email": "testuser@example.com",
+            "username": "testuser$index",
+            "email": "testuser$index@example.com",
             "enabled": false,
-            "firstName": "Test",
-            "lastName": "User"
+            "firstName": "Test$index",
+            "lastName": "User$index"
           }
           """.stripMargin
-            )
-        )
-    )
+              )
+          )
+      )
+    }
+  }
+
+  def mockAuthServerUserResponse(userId: String): Unit = {
+    mockAuthServerUserResponse(Seq(userId))
   }
 
   def mockGetConsignmentsResponse(dateTime: Option[String] = None): StubMapping = {
@@ -204,6 +216,13 @@ class LambdaSpecUtils(wiremockAuthServer: WireMockServer, wiremockSsmServer: Wir
       case Left(err) => throw new Exception(err)
       case Right(request) => request
     }
+  }
+
+  def mockContext(logGroupName: String = "test-log-group", logStreamName: String = "test-log-stream"): Context = {
+    val mockContext = mock[Context]
+    when(mockContext.getLogGroupName).thenReturn(logGroupName)
+    when(mockContext.getLogStreamName).thenReturn(logStreamName)
+    mockContext
   }
 }
 
