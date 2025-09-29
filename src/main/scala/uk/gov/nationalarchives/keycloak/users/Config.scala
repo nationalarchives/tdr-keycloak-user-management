@@ -32,7 +32,7 @@ object Config {
     ssmClient.getParameter(getParameterRequest).parameter().value()
   }
 
-  def authFromConfig(): IO[Auth] = ConfigSource.default.loadF[IO, Configuration].map(config => {
+  def authFromConfig(): IO[Auth] = ConfigSource.default.loadF[IO, Configuration]().map(config => {
     val kmsUtils = KMSUtils(kms(config.kms.endpoint), Map("LambdaFunctionName" -> config.function.name))
     Auth(kmsUtils.decryptValue(config.auth.url),
       config.auth.secretPath,
@@ -41,7 +41,7 @@ object Config {
     )
   })
 
-  def reportingFromConfig(): IO[Reporting] = ConfigSource.default.loadF[IO, Configuration].map(config => {
+  def reportingFromConfig(): IO[Reporting] = ConfigSource.default.loadF[IO, Configuration]().map(config => {
     val kmsUtils = KMSUtils(kms(config.kms.endpoint), Map("LambdaFunctionName" -> config.function.name))
     Reporting(url = kmsUtils.decryptValue(config.reporting.url),
       client = config.reporting.client,
@@ -50,10 +50,10 @@ object Config {
     )
   })
 
-  def snsFromConfig(): IO[Sns] = ConfigSource.default.loadF[IO, Configuration]
+  def snsFromConfig(): IO[Sns] = ConfigSource.default.loadF[IO, Configuration]()
     .map(config => Sns(config.sns.endpoint, config.sns.notificationsTopicArn))
 
-  def environmentFromConfig(): IO[String] = ConfigSource.default.loadF[IO, Configuration].map(_.environment)
+  def environmentFromConfig(): IO[String] = ConfigSource.default.loadF[IO, Configuration]().map(_.environment)
 
   case class DisableUsers(dryRun: Boolean)
   case class LambdaFunction(name: String)
