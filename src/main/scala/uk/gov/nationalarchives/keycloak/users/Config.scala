@@ -55,12 +55,11 @@ object Config {
 
   def environmentFromConfig(): IO[String] = ConfigSource.default.loadF[IO, Configuration]().map(_.environment)
 
-  case class DisableUsers(dryRun: Boolean)
   case class LambdaFunction(name: String)
   case class Kms(endpoint: String)
   case class Ssm(endpoint: String)
   case class Sns(endpoint: String, notificationsTopicArn: String)
   case class Auth(url: String, secretPath: String, client: String, realm: String)
-  case class Configuration(auth: Auth, reporting: Reporting, function: LambdaFunction, kms: Kms, ssm: Ssm, disableUsers: DisableUsers, sns: Sns, environment: String)
+  case class Configuration(auth: Auth, reporting: Reporting, function: LambdaFunction, kms: Kms, ssm: Ssm, sns: Sns, environment: String)
   case class Reporting(url: String, client: String, secretPath: String, realm: String)
 }
