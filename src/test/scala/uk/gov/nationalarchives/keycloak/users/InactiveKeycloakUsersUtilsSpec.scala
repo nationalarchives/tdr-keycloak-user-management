@@ -59,7 +59,7 @@ class InactiveKeycloakUsersUtilsSpec extends AnyFlatSpec with MockitoSugar with 
     result shouldBe true
   }
 
-  "disableInactiveUsers" should "disable users based on the predicate when dry run is disabled" in {
+  "disableInactiveUsers" should "disable users based on the predicate" in {
     val keycloak = mock[Keycloak]
     val realmResource = mock[RealmResource]
     val usersResource = mock[UsersResource]
@@ -80,43 +80,11 @@ class InactiveKeycloakUsersUtilsSpec extends AnyFlatSpec with MockitoSugar with 
       authConfig,
       List(user),
       (_, _) => true,
-      30,
-      dryRun = false
+      30
     ).unsafeRunSync()
 
     verify(userRep).setEnabled(false)
     verify(userResource).update(userRep)
-
-    result should contain only updatedUser
-  }
-
-  "disableInactiveUsers" should "not disable users when dry run is enabled" in {
-    val keycloak = mock[Keycloak]
-    val realmResource = mock[RealmResource]
-    val usersResource = mock[UsersResource]
-    val userResource = mock[UserResource]
-    val userRep = mock[UserRepresentation]
-
-    val user = InactiveKeycloakUsersUtils.UserActivity(userId, ZonedDateTime.now().minusDays(40))
-
-    when(keycloak.realm(testRealm)).thenReturn(realmResource)
-    when(realmResource.users()).thenReturn(usersResource)
-    when(usersResource.get(userId)).thenReturn(userResource)
-    when(userResource.toRepresentation()).thenReturn(userRep)
-
-    val updatedUser = user.copy(isDisabled = true)
-
-    val result = InactiveKeycloakUsersUtils.disableInactiveUsers(
-      keycloak,
-      authConfig,
-      List(user),
-      (_, _) => true,
-      30,
-      dryRun = true
-    ).unsafeRunSync()
-
-    verify(userRep, times(0)).setEnabled(false)
-    verify(userResource, times(0)).update(userRep)
 
     result should contain only updatedUser
   }

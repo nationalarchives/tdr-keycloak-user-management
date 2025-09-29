@@ -92,7 +92,6 @@ class InactiveKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Moc
     decodedBody should include("\"disabledUsersCount\" : 1")
     decodedBody should include(s"\"logGroupName\" : \"${mockLogInfo.logGroupName}\"")
     decodedBody should include(s"\"logStreamName\" : \"${mockLogInfo.logStreamName}\"")
-    decodedBody should include("\"dryRun\" : false")
   }
 
   "handleRequest" should "publish appropriate event when multiple users are disabled" in {
@@ -127,7 +126,6 @@ class InactiveKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Moc
     decodedBody should include("\"disabledUsersCount\" : 3")
     decodedBody should include(s"\"logGroupName\" : \"${mockLogInfo.logGroupName}\"")
     decodedBody should include(s"\"logStreamName\" : \"${mockLogInfo.logStreamName}\"")
-    decodedBody should include("\"dryRun\" : false")
   }
 
   "handleRequest" should "fail with error explaining partial failure when sns publish fails" in {
@@ -265,6 +263,6 @@ class InactiveKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Moc
     decodedBody should include("\"disabledUsersCount\" : 0")
     decodedBody should include(s"\"logGroupName\" : \"${mockLogInfo.logGroupName}\"")
     decodedBody should include(s"\"logStreamName\" : \"${mockLogInfo.logStreamName}\"")
-    decodedBody should include("\"dryRun\" : false")
+    decodedBody should not include("\"dryRun\" : false")
   }
 }

@@ -11,7 +11,7 @@ import io.circe.parser._
 import org.slf4j.Logger
 import org.slf4j.simple.SimpleLoggerFactory
 import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, SttpBackendOptions}
-import uk.gov.nationalarchives.keycloak.users.Config.{authFromConfig, disableUsersFromConfig, environmentFromConfig, getClientSecret, reportingFromConfig, snsFromConfig}
+import uk.gov.nationalarchives.keycloak.users.Config._
 import uk.gov.nationalarchives.keycloak.users.InactiveKeycloakUsersLambda.{EventInput, LambdaResponse, LogInfo}
 import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment}
@@ -56,11 +56,10 @@ class InactiveKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaR
         )
         InactiveKeycloakUsersUtils.fetchLatestUserActivity(user, consignments)
       }
-      disableUsers <- disableUsersFromConfig()
       inactiveUsers <- InactiveKeycloakUsersUtils.disableInactiveUsers(
-        keycloak, authConf, inactiveUsers = eligibleUsersActivity.flatten, InactiveKeycloakUsersUtils.userActivityOlderThanPeriod, payload.inactivityPeriodDays, disableUsers.dryRun)
+        keycloak, authConf, inactiveUsers = eligibleUsersActivity.flatten, InactiveKeycloakUsersUtils.userActivityOlderThanPeriod, payload.inactivityPeriodDays)
       disableSuccessMessage = "Users disabled successfully: " + inactiveUsers.filter(_.isDisabled).map(_.userId).mkString(", ")
-      _ <- IO(notificationUtils.publishUsersDisabledEvent(inactiveUsers.count(_.isDisabled), LogInfo(context.getLogGroupName, context.getLogStreamName), disableUsers.dryRun))
+      _ <- IO(notificationUtils.publishUsersDisabledEvent(inactiveUsers.count(_.isDisabled), LogInfo(context.getLogGroupName, context.getLogStreamName)))
         .adaptError(e => new RuntimeException(s"$disableSuccessMessage, but users disabled event publication failed with error ${e.getMessage}"))
       _ = keycloak.close()
     } yield LambdaResponse(isSuccess = true, disableSuccessMessage)
@@ -78,6 +77,6 @@ object InactiveKeycloakUsersLambda {
   case class EventInput(userType: String, inactivityPeriodDays: Int)
 
   case class LambdaResponse(isSuccess: Boolean, message: String)
-  
+
   case class LogInfo(logGroupName: String, logStreamName: String)
 }

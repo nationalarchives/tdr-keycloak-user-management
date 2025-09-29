@@ -50,10 +50,6 @@ object Config {
     )
   })
 
-  def disableUsersFromConfig(): IO[DisableUsers] = ConfigSource.default.loadF[IO, Configuration].map(config => {
-    DisableUsers(config.disableUsers.dryRun)
-  })
-
   def snsFromConfig(): IO[Sns] = ConfigSource.default.loadF[IO, Configuration]
     .map(config => Sns(config.sns.endpoint, config.sns.notificationsTopicArn))
 
