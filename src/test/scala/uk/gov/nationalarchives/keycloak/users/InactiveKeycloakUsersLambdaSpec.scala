@@ -4,9 +4,9 @@ import com.amazonaws.services.lambda.runtime.events.ScheduledEvent
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import org.mockito.MockitoSugar
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import uk.gov.nationalarchives.keycloak.users.InactiveKeycloakUsersLambda.{LambdaResponse, LogInfo}
 
 import java.net.URLDecoder

@@ -11,7 +11,7 @@ import io.circe.parser._
 import org.slf4j.Logger
 import org.slf4j.simple.SimpleLoggerFactory
 import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, SttpBackendOptions}
-import uk.gov.nationalarchives.keycloak.users.Config.{authFromConfig, disableUsersFromConfig, environmentFromConfig, getClientSecret, reportingFromConfig, snsFromConfig}
+import uk.gov.nationalarchives.keycloak.users.Config._
 import uk.gov.nationalarchives.keycloak.users.InactiveKeycloakUsersLambda.{EventInput, LambdaResponse, LogInfo}
 import uk.gov.nationalarchives.tdr.GraphQLClient
 import uk.gov.nationalarchives.tdr.keycloak.{KeycloakUtils, TdrKeycloakDeployment}
@@ -28,7 +28,7 @@ class InactiveKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaR
   val logger: Logger = new SimpleLoggerFactory().getLogger(this.getClass.getName)
   val keycloakUtils = new KeycloakUtils()
   val getConsignmentsClient = new GraphQLClient[gcs.Data, gcs.Variables](Config.apiUrl)
-  val graphQlApi: GraphQlApiService = GraphQlApiService(keycloakUtils, getConsignmentsClient)
+  private val graphQlApi: GraphQlApiService = GraphQlApiService(keycloakUtils, getConsignmentsClient)
 
   @Override
   override def handleRequest(event: ScheduledEvent, context: Context): LambdaResponse = {
@@ -78,6 +78,6 @@ object InactiveKeycloakUsersLambda {
   case class EventInput(userType: String, inactivityPeriodDays: Int)
 
   case class LambdaResponse(isSuccess: Boolean, message: String)
-  
+
   case class LogInfo(logGroupName: String, logStreamName: String)
 }
