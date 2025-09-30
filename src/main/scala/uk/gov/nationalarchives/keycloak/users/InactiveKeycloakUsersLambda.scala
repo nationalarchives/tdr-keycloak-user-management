@@ -28,7 +28,7 @@ class InactiveKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaR
   val logger: Logger = new SimpleLoggerFactory().getLogger(this.getClass.getName)
   val keycloakUtils = new KeycloakUtils()
   val getConsignmentsClient = new GraphQLClient[gcs.Data, gcs.Variables](Config.apiUrl)
-  val graphQlApi: GraphQlApiService = GraphQlApiService(keycloakUtils, getConsignmentsClient)
+  private val graphQlApi: GraphQlApiService = GraphQlApiService(keycloakUtils, getConsignmentsClient)
 
   @Override
   override def handleRequest(event: ScheduledEvent, context: Context): LambdaResponse = {
@@ -56,10 +56,11 @@ class InactiveKeycloakUsersLambda extends RequestHandler[ScheduledEvent, LambdaR
         )
         InactiveKeycloakUsersUtils.fetchLatestUserActivity(user, consignments)
       }
+      disableUsers <- disableUsersFromConfig()
       inactiveUsers <- InactiveKeycloakUsersUtils.disableInactiveUsers(
-        keycloak, authConf, inactiveUsers = eligibleUsersActivity.flatten, InactiveKeycloakUsersUtils.userActivityOlderThanPeriod, payload.inactivityPeriodDays)
+        keycloak, authConf, inactiveUsers = eligibleUsersActivity.flatten, InactiveKeycloakUsersUtils.userActivityOlderThanPeriod, payload.inactivityPeriodDays, disableUsers.dryRun)
       disableSuccessMessage = "Users disabled successfully: " + inactiveUsers.filter(_.isDisabled).map(_.userId).mkString(", ")
-      _ <- IO(notificationUtils.publishUsersDisabledEvent(inactiveUsers.count(_.isDisabled), LogInfo(context.getLogGroupName, context.getLogStreamName)))
+      _ <- IO(notificationUtils.publishUsersDisabledEvent(inactiveUsers.count(_.isDisabled), LogInfo(context.getLogGroupName, context.getLogStreamName), disableUsers.dryRun))
         .adaptError(e => new RuntimeException(s"$disableSuccessMessage, but users disabled event publication failed with error ${e.getMessage}"))
       _ = keycloak.close()
     } yield LambdaResponse(isSuccess = true, disableSuccessMessage)

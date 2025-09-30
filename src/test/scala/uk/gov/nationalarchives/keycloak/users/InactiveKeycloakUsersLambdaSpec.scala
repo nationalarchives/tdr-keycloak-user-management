@@ -4,9 +4,9 @@ import com.amazonaws.services.lambda.runtime.events.ScheduledEvent
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock._
 import org.mockito.MockitoSugar
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import uk.gov.nationalarchives.keycloak.users.InactiveKeycloakUsersLambda.{LambdaResponse, LogInfo}
 
 import java.net.URLDecoder
@@ -92,6 +92,7 @@ class InactiveKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Moc
     decodedBody should include("\"disabledUsersCount\" : 1")
     decodedBody should include(s"\"logGroupName\" : \"${mockLogInfo.logGroupName}\"")
     decodedBody should include(s"\"logStreamName\" : \"${mockLogInfo.logStreamName}\"")
+    decodedBody should include("\"dryRun\" : false")
   }
 
   "handleRequest" should "publish appropriate event when multiple users are disabled" in {
@@ -126,6 +127,7 @@ class InactiveKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Moc
     decodedBody should include("\"disabledUsersCount\" : 3")
     decodedBody should include(s"\"logGroupName\" : \"${mockLogInfo.logGroupName}\"")
     decodedBody should include(s"\"logStreamName\" : \"${mockLogInfo.logStreamName}\"")
+    decodedBody should include("\"dryRun\" : false")
   }
 
   "handleRequest" should "fail with error explaining partial failure when sns publish fails" in {
@@ -263,6 +265,6 @@ class InactiveKeycloakUsersLambdaSpec extends AnyFlatSpec with Matchers with Moc
     decodedBody should include("\"disabledUsersCount\" : 0")
     decodedBody should include(s"\"logGroupName\" : \"${mockLogInfo.logGroupName}\"")
     decodedBody should include(s"\"logStreamName\" : \"${mockLogInfo.logStreamName}\"")
-    decodedBody should not include("\"dryRun\" : false")
+    decodedBody should include("\"dryRun\" : false")
   }
 }
