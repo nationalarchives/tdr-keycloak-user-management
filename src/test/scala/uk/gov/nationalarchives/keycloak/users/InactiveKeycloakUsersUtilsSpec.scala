@@ -2,8 +2,8 @@ package uk.gov.nationalarchives.keycloak.users
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
-import graphql.codegen.GetConsignments.getConsignments.Consignments.{Edges, PageInfo}
 import graphql.codegen.GetConsignments.getConsignments.Consignments.Edges.Node
+import graphql.codegen.GetConsignments.getConsignments.Consignments.{Edges, PageInfo}
 import graphql.codegen.GetConsignments.{getConsignments => gcs}
 import org.keycloak.admin.client.Keycloak
 import org.keycloak.admin.client.resource.{RealmResource, UserResource, UsersResource}
