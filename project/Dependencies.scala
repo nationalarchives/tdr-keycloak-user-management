@@ -1,9 +1,9 @@
 import sbt._
 
 object Dependencies {
-  private val awsUtilsVersion = "0.1.305"
-  private val keycloakVersion = "26.3.5"
-  private val circeVersion = "0.14.14"
+  private val awsUtilsVersion = "0.1.307"
+  private val keycloakVersion = "26.4.0"
+  private val circeVersion = "0.14.15"
 
   lazy val kmsUtils =  "uk.gov.nationalarchives" %% "kms-utils" % awsUtilsVersion
   lazy val s3Utils =  "uk.gov.nationalarchives" %% "s3-utils" % awsUtilsVersion
@@ -15,7 +15,7 @@ object Dependencies {
   lazy val csvParser =  "io.github.zamblauskas" %% "scala-csv-parser" % "0.13.1"
   lazy val circeExtras =  "io.circe" %% "circe-generic-extras" % "0.14.4"
   lazy val keycloakCore  = "org.keycloak" % "keycloak-core" % keycloakVersion
-  lazy val keycloakAdminClient = "org.keycloak" % "keycloak-admin-client" % "26.0.6"
+  lazy val keycloakAdminClient = "org.keycloak" % "keycloak-admin-client" % "26.0.7"
   lazy val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.9"
   lazy val pureConfigCatsEffect = "com.github.pureconfig" %% "pureconfig-cats-effect" % "0.17.9"
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19"
@@ -23,8 +23,8 @@ object Dependencies {
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
   lazy val circe = "io.circe" %% "circe-generic" % circeVersion
   lazy val circeParser = "io.circe" %% "circe-parser" % circeVersion
-  lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.259"
-  lazy val generatedGraphql = "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.435"
-  lazy val graphqlClient = "uk.gov.nationalarchives" %% "tdr-graphql-client" % "0.0.254"
+  lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.260"
+  lazy val generatedGraphql = "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.436"
+  lazy val graphqlClient = "uk.gov.nationalarchives" %% "tdr-graphql-client" % "0.0.255"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "2.0.0"
 }
