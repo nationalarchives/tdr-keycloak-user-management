@@ -1,7 +1,7 @@
 import sbt._
 
 object Dependencies {
-  private val awsUtilsVersion = "0.1.307"
+  private val awsUtilsVersion = "0.1.308"
   private val keycloakVersion = "26.4.0"
   private val circeVersion = "0.14.15"
 
@@ -24,7 +24,7 @@ object Dependencies {
   lazy val circe = "io.circe" %% "circe-generic" % circeVersion
   lazy val circeParser = "io.circe" %% "circe-parser" % circeVersion
   lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.260"
-  lazy val generatedGraphql = "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.436"
-  lazy val graphqlClient = "uk.gov.nationalarchives" %% "tdr-graphql-client" % "0.0.255"
+  lazy val generatedGraphql = "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.438"
+  lazy val graphqlClient = "uk.gov.nationalarchives" %% "tdr-graphql-client" % "0.0.256"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "2.0.0"
 }
