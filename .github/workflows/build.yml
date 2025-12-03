@@ -11,21 +11,21 @@ jobs:
     runs-on: ubuntu-latest
     environment: intg
     steps:
-      - uses: sbt/setup-sbt@3e125ece5c3e5248e18da9ed8d2cce3d335ec8dd
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
-      - uses: actions-ecosystem/action-get-latest-tag@b7c32daec3395a9616f88548363a42652b22d435
+      - uses: sbt/setup-sbt@3e125ece5c3e5248e18da9ed8d2cce3d335ec8dd # v1.1.14
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions-ecosystem/action-get-latest-tag@b7c32daec3395a9616f88548363a42652b22d435 # v1.6.0
         id: get-latest-tag
-      - uses: actions-ecosystem/action-bump-semver@34e334551143a5301f38c830e44a22273c6ff5c5
+      - uses: actions-ecosystem/action-bump-semver@34e334551143a5301f38c830e44a22273c6ff5c5 # v1.0.0
         id: bump-semver
         with:
           current_version: ${{ steps.get-latest-tag.outputs.tag }}
           level: patch
-      - uses: actions-ecosystem/action-push-tag@6e82caefe706f5a729e354df7443dc82f98a414f
+      - uses: actions-ecosystem/action-push-tag@6e82caefe706f5a729e354df7443dc82f98a414f # v1.0.0
         with:
           tag: ${{ steps.bump-semver.outputs.new_version }}
           message: '${{ steps.bump-semver.outputs.new_version }}'
       - name: Configure AWS credentials from management account
-        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8
+        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8 # v5.1.0
         with:
           role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
           aws-region: eu-west-2

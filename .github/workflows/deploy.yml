@@ -26,11 +26,11 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           token: ${{ secrets.WORKFLOW_PAT }}
       - name: Configure AWS credentials from management account
-        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8
+        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8 # v5.1.0
         with:
           role-to-assume: arn:aws:iam::${{ secrets.ACCOUNT_NUMBER }}:role/TDRGithubActionsDeployLambda${{ secrets.TITLE_STAGE }}
           aws-region: eu-west-2
@@ -41,7 +41,7 @@ jobs:
           aws lambda update-function-code --function-name tdr-create-keycloak-user-api-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-code-mgmt --s3-key keycloak-user-management/${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
           aws lambda update-function-code --function-name tdr-inactive-keycloak-users-${{ github.event.inputs.environment }} --s3-bucket tdr-backend-code-mgmt --s3-key keycloak-user-management/${{ github.event.inputs.toDeploy }}/keycloak-user-management.jar > /dev/null
       - name: Send service updated message
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         with:
           payload: |
             {
@@ -58,7 +58,7 @@ jobs:
           git push -f origin release-${{ github.event.inputs.environment }}
       - name: Run E2E tests
         if: github.event.inputs.environment != 'prod'
-        uses: octokit/request-action@dad4362715b7fb2ddedf9772c8670824af564f0d
+        uses: octokit/request-action@dad4362715b7fb2ddedf9772c8670824af564f0d # v2.4.0
         with:
           route: POST /repos/nationalarchives/tdr-e2e-tests/actions/workflows/ci.yml/dispatches
           ref: master
@@ -67,7 +67,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
       - name: Send failure message
         id: slack
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a
+        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
         if: ${{ failure() }}
         with:
           payload: |
