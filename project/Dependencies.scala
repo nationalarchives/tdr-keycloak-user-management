@@ -16,14 +16,14 @@ object Dependencies {
   lazy val circeExtras =  "io.circe" %% "circe-generic-extras" % "0.14.4"
   lazy val keycloakCore  = "org.keycloak" % "keycloak-core" % keycloakVersion
   lazy val keycloakAdminClient = "org.keycloak" % "keycloak-admin-client" % "26.0.8"
-  lazy val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.9"
-  lazy val pureConfigCatsEffect = "com.github.pureconfig" %% "pureconfig-cats-effect" % "0.17.9"
+  lazy val pureConfig = "com.github.pureconfig" %% "pureconfig" % "0.17.10"
+  lazy val pureConfigCatsEffect = "com.github.pureconfig" %% "pureconfig-cats-effect" % "0.17.10"
   lazy val scalaTest = "org.scalatest" %% "scalatest" % "3.2.19"
   lazy val slf4j = "org.slf4j" % "slf4j-simple" % "2.0.17"
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
   lazy val circe = "io.circe" %% "circe-generic" % circeVersion
   lazy val circeParser = "io.circe" %% "circe-parser" % circeVersion
-  lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.268"
+  lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.269"
   lazy val generatedGraphql = "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.447"
   lazy val graphqlClient = "uk.gov.nationalarchives" %% "tdr-graphql-client" % "0.0.265"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "2.0.0"
