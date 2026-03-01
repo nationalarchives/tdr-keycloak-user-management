@@ -26,5 +26,5 @@ object Dependencies {
   lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.275"
   lazy val generatedGraphql = "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.455"
   lazy val graphqlClient = "uk.gov.nationalarchives" %% "tdr-graphql-client" % "0.0.276"
-  lazy val mockito = "org.mockito" %% "mockito-scala" % "2.0.0"
+  lazy val mockito = "org.mockito" %% "mockito-scala" % "2.1.0"
 }
