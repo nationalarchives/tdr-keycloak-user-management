@@ -44,7 +44,7 @@ jobs:
           aws lambda update-function-code --function-name "tdr-create-keycloak-user-api-${ENVIRONMENT}" --s3-bucket tdr-backend-code-mgmt --s3-key "keycloak-user-management/${DEPLOY_VERSION}/keycloak-user-management.jar" > /dev/null
           aws lambda update-function-code --function-name "tdr-inactive-keycloak-users-${ENVIRONMENT}" --s3-bucket tdr-backend-code-mgmt --s3-key "keycloak-user-management/${DEPLOY_VERSION}/keycloak-user-management.jar" > /dev/null
       - name: Send service updated message
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
         with:
           payload: |
             {
@@ -72,7 +72,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
       - name: Send failure message
         id: slack
-        uses: slackapi/slack-github-action@91efab103c0de0a537f72a35f6b8cda0ee76bf0a # v2.1.1
+        uses: slackapi/slack-github-action@af78098f536edbc4de71162a307590698245be95 # v3.0.1
         if: ${{ failure() }}
         with:
           payload: |
