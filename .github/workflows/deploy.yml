@@ -63,7 +63,7 @@ jobs:
           git push -f origin "release-${ENVIRONMENT}"
       - name: Run E2E tests
         if: github.event.inputs.environment != 'prod'
-        uses: octokit/request-action@dad4362715b7fb2ddedf9772c8670824af564f0d # v2.4.0
+        uses: octokit/request-action@b91aabaa861c777dcdb14e2387e30eddf04619ae # v3.0.0
         with:
           route: POST /repos/nationalarchives/tdr-e2e-tests/actions/workflows/ci.yml/dispatches
           ref: master
