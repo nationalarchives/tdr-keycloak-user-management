@@ -1,7 +1,7 @@
 import sbt._
 
 object Dependencies {
-  private val awsUtilsVersion = "0.1.331"
+  private val awsUtilsVersion = "0.1.332"
   private val keycloakVersion = "26.6.3"
   private val circeVersion = "0.14.15"
 
