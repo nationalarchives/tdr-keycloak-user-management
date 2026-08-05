@@ -27,11 +27,11 @@ jobs:
     environment: ${{ github.event.inputs.environment }}
     steps:
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           token: ${{ secrets.WORKFLOW_PAT }}
       - name: Configure AWS credentials from management account
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6.2.0
+        uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
         with:
           role-to-assume: arn:aws:iam::${{ secrets.ACCOUNT_NUMBER }}:role/TDRGithubActionsDeployLambda${{ secrets.TITLE_STAGE }}
           aws-region: eu-west-2
@@ -45,7 +45,7 @@ jobs:
           aws lambda update-function-code --function-name "tdr-create-keycloak-user-api-${ENVIRONMENT}" --s3-bucket tdr-backend-code-mgmt --s3-key "keycloak-user-management/${DEPLOY_VERSION}/keycloak-user-management.jar" > /dev/null
           aws lambda update-function-code --function-name "tdr-inactive-keycloak-users-${ENVIRONMENT}" --s3-bucket tdr-backend-code-mgmt --s3-key "keycloak-user-management/${DEPLOY_VERSION}/keycloak-user-management.jar" > /dev/null
       - name: Send service updated message
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           payload: |
             {
@@ -73,7 +73,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
       - name: Send failure message
         id: slack
-        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         if: ${{ failure() }}
         with:
           payload: |
