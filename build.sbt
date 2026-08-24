@@ -35,6 +35,9 @@ lazy val root = (project in file("."))
     Test / fork := true,
     Test / javaOptions += s"-Dconfig.file=${sourceDirectory.value}/test/resources/application.conf",
     assembly / assemblyJarName := "keycloak-user-management.jar",
+    assembly / assemblyOutputPath := Def.uncached {
+      baseDirectory.value / "target" / "scala-2.13" / (assembly / assemblyJarName).value
+    },
     Test / parallelExecution := false,
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", xs@_*) =>
