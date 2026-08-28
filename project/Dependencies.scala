@@ -9,7 +9,7 @@ object Dependencies {
   lazy val s3Utils =  "uk.gov.nationalarchives" %% "s3-utils" % awsUtilsVersion
   lazy val snsUtils =  "uk.gov.nationalarchives" %% "sns-utils" % awsUtilsVersion
   lazy val decoderUtils =  "uk.gov.nationalarchives" %% "decoders-utils" % awsUtilsVersion
-  lazy val awsSsm = "software.amazon.awssdk" % "ssm" % "2.54.3"
+  lazy val awsSsm = "software.amazon.awssdk" % "ssm" % "2.54.6"
   lazy val catsEffect = "org.typelevel" %% "cats-effect" % "3.7.1"
   lazy val lambdaCore = "com.amazonaws" % "aws-lambda-java-core" % "1.4.0"
   lazy val csvParser =  "io.github.zamblauskas" %% "scala-csv-parser" % "0.13.1"
@@ -23,7 +23,7 @@ object Dependencies {
   lazy val wiremock = "com.github.tomakehurst" % "wiremock" % "3.0.1"
   lazy val circe = "io.circe" %% "circe-generic" % circeVersion
   lazy val circeParser = "io.circe" %% "circe-parser" % circeVersion
-  lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.298"
+  lazy val authUtils = "uk.gov.nationalarchives" %% "tdr-auth-utils" % "0.0.299"
   lazy val generatedGraphql = "uk.gov.nationalarchives" %% "tdr-generated-graphql" % "0.0.485"
   lazy val graphqlClient = "uk.gov.nationalarchives" %% "tdr-graphql-client" % "0.0.306"
   lazy val mockito = "org.mockito" %% "mockito-scala" % "2.2.3"
