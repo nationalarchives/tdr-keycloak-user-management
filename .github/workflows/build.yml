@@ -3,44 +3,48 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      snapshot:
+        description: 'Build a dev snapshot from the current branch instead of the next release version'
+        type: boolean
+        required: false
+        default: false
 permissions:
   id-token: write
   contents: write
 jobs:
   pre-deploy:
     runs-on: ubuntu-latest
-    environment: intg
+    environment: drdev
     steps:
       - uses: sbt/setup-sbt@ecad189dd245444b9ae0a0cd5922fd938b88906f # v1.5.12
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
             persist-credentials: true
-      - uses: actions-ecosystem/action-get-latest-tag@b7c32daec3395a9616f88548363a42652b22d435 # v1.6.0
-        id: get-latest-tag
-      - uses: actions-ecosystem/action-bump-semver@34e334551143a5301f38c830e44a22273c6ff5c5 # v1.0.0
-        id: bump-semver
+      - run: pip install requests
+      - id: next-tag
+        uses: nationalarchives/tdr-github-actions/.github/actions/get-next-version@714115ab533f9f6b0b4fed5a4293e9d57c2b89d8 # v0.0.44
         with:
-          current_version: ${{ steps.get-latest-tag.outputs.tag }}
-          level: patch
-      - uses: actions-ecosystem/action-push-tag@6e82caefe706f5a729e354df7443dc82f98a414f # v1.0.0
-        with:
-          tag: ${{ steps.bump-semver.outputs.new_version }}
-          message: '${{ steps.bump-semver.outputs.new_version }}'
-      - name: Configure AWS credentials from management account
-        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
-        with:
-          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
-          aws-region: eu-west-2
-          role-session-name: APIDownloadDependencies
-      - name: Build jar file
-        run: sbt assembly
-      - name: Build new image version
-        env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
-        run: |
-          aws s3 cp target/scala-2.13/keycloak-user-management.jar s3://tdr-backend-code-mgmt/keycloak-user-management/${{ steps.bump-semver.outputs.new_version }}/keycloak-user-management.jar
-          gh release create ${{ steps.bump-semver.outputs.new_version }} target/scala-2.13/keycloak-user-management.jar
-      - name: Deploy to integration
-        run: gh workflow run deploy.yml  -f environment=intg -f toDeploy=${{ steps.bump-semver.outputs.new_version }} -r main
-        env:
-          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          repo-name: tdr-keycloak-user-management
+          snapshot: ${{ inputs.snapshot }}
+      - name: Echo next version
+        run: echo "Next version is ${{ steps.next-tag.outputs.next-version }}"
+#      - name: Configure AWS credentials from management account
+#        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+#        with:
+#          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
+#          aws-region: eu-west-2
+#          role-session-name: APIDownloadDependencies
+#      - name: Build jar file
+#        run: sbt assembly
+#      - name: Build new image version
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+#        run: |
+#          aws s3 cp target/scala-2.13/keycloak-user-management.jar s3://tdr-backend-code-mgmt/keycloak-user-management/${{ steps.bump-semver.outputs.new_version }}/keycloak-user-management.jar
+#          gh release create ${{ steps.bump-semver.outputs.new_version }} target/scala-2.13/keycloak-user-management.jar
+#      - name: Deploy to drdev
+#        run: gh workflow run deploy.yml  -f environment=drdev -f toDeploy=${{ steps.bump-semver.outputs.new_version }} -r main
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
