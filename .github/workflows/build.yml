@@ -30,19 +30,19 @@ jobs:
           snapshot: ${{ inputs.snapshot }}
       - name: Echo next version
         run: echo "Next version is ${{ steps.next-tag.outputs.next-version }}"
-#      - name: Configure AWS credentials from management account
-#        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
-#        with:
-#          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
-#          aws-region: eu-west-2
-#          role-session-name: APIDownloadDependencies
-#      - name: Build jar file
-#        run: sbt assembly
-#      - name: Build new image version
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
-#        run: |
-#          aws s3 cp target/scala-2.13/keycloak-user-management.jar s3://tdr-backend-code-mgmt/keycloak-user-management/${{ steps.bump-semver.outputs.new_version }}/keycloak-user-management.jar
+      - name: Configure AWS credentials from management account
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.MANAGEMENT_ACCOUNT }}:role/TDRGithubActionsRoleMgmt
+          aws-region: eu-west-2
+          role-session-name: APIDownloadDependencies
+      - name: Build jar file
+        run: sbt assembly
+      - name: Build new image version
+        env:
+          CODE_BUCKET_NAME: ${{ format('tdr-backend-code-mgmt-{0}-eu-west-2-an', secrets.MANAGEMENT_ACCOUNT) }}
+        run: |
+          aws s3 cp target/scala-2.13/keycloak-user-management.jar "s3://$CODE_BUCKET_NAME/keycloak-user-management/${{ steps.next-tag.outputs.next-version }}/keycloak-user-management.jar"
 #          gh release create ${{ steps.bump-semver.outputs.new_version }} target/scala-2.13/keycloak-user-management.jar
 #      - name: Deploy to drdev
 #        run: gh workflow run deploy.yml  -f environment=drdev -f toDeploy=${{ steps.bump-semver.outputs.new_version }} -r main
