@@ -28,8 +28,6 @@ jobs:
         with:
           repo-name: tdr-keycloak-user-management
           snapshot: ${{ inputs.snapshot }}
-      - name: Echo next version
-        run: echo "Next version is ${{ steps.next-tag.outputs.next-version }}"
       - name: Configure AWS credentials from management account
         uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
@@ -38,7 +36,7 @@ jobs:
           role-session-name: APIDownloadDependencies
       - name: Build jar file
         run: sbt assembly
-      - name: Build new image version
+      - name: Copy artifact to S3
         env:
           CODE_BUCKET_NAME: ${{ format('tdr-backend-code-mgmt-{0}-eu-west-2-an', secrets.MANAGEMENT_ACCOUNT) }}
         run: |
@@ -52,7 +50,10 @@ jobs:
           git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git tag "${NEXT_VERSION}"
           git push origin "${NEXT_VERSION}"
-#      - name: Deploy to drdev
-#        run: gh workflow run deploy.yml  -f environment=drdev -f toDeploy=${{ steps.bump-semver.outputs.new_version }} -r main
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+      - name: Deploy to drdev
+        run: |
+          gh workflow run deploy.yml --ref "$WORKFLOW_REF" \
+            -f environment=drdev \
+            -f toDeploy=${{ steps.next-tag.outputs.next-version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
