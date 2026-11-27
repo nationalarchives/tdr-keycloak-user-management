@@ -44,6 +44,14 @@ jobs:
         run: |
           aws s3 cp target/scala-2.13/keycloak-user-management.jar "s3://$CODE_BUCKET_NAME/keycloak-user-management/${{ steps.next-tag.outputs.next-version }}/keycloak-user-management.jar"
 #          gh release create ${{ steps.bump-semver.outputs.new_version }} target/scala-2.13/keycloak-user-management.jar
+      - name: Tag release
+        env:
+          GITHUB_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          NEXT_VERSION: ${{ steps.next-tag.outputs.next-version }}
+        run: |
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/tdr-keycloak-user-management.git"
+          git tag "${NEXT_VERSION}"
+          git push origin "${NEXT_VERSION}"
 #      - name: Deploy to drdev
 #        run: gh workflow run deploy.yml  -f environment=drdev -f toDeploy=${{ steps.bump-semver.outputs.new_version }} -r main
 #        env:
